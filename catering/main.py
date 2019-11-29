@@ -1,17 +1,18 @@
 # manager script for full menu creation
+import os
+import sys
 import CatInterface
 import CatClasses
 from importlib import reload
-import os
-import sys
+
 
 sys.path.insert(1, os.path.join('..', '_common'))
 
 url_main = 'https://admin-su-qa.crewplatform.aero/'
 
 
-routes_table_path = '/Volumes/data/pycharmProjects/_common/afl_routes_new.csv'
-nonbase_menus_path = '/Volumes/data/wrk/catering menu/внебазовые меню/CSVs_to_load'
+routes_table_path = ''
+nonbase_menus_path = '/Volumes/data/catering menu/внебазовые меню/CSVs_to_load'
 
 
 def create_non_base_menus():
@@ -22,9 +23,14 @@ def create_non_base_menus():
     for file in files:
         cat_name_en = [i for i in top_cats.keys() if file.split('_')[0] in i][0]
         cat_name_ru = top_cats[cat_name_en][2]
-        menu = CatClasses.Menu(nonbase_menus_path, file, interface, name_en=cat_name_en, name_ru=cat_name_ru)
+        menu = CatClasses.Menu(nonbase_menus_path,
+                               file,
+                               interface,
+                               name_en=cat_name_en,
+                               name_ru=cat_name_ru)
         menu.deploy()
         done.append(file)
+    print(done)
 
 
 def create_base_menu(base_menus_path, filename, position):

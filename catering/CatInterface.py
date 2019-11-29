@@ -75,7 +75,7 @@ class CatInterface:
             default_cats[menu] = {name: c[1] for name, c in cats.items()}
         return default_cats
 
-    def get_items_in_subcat(self, subcat_id, search_value=''):
+    def get_items_in_subcat(self, subcat_id, search_value='', by='pos'):
         items_list = self.session.get(URLs.URL_catering_items_in_cat.format(category_id=subcat_id,
                                                                             length=100, search_value=search_value))
         items_list = json.loads(items_list.content)['data']
@@ -87,7 +87,10 @@ class CatInterface:
             name_en = name[0].replace('English: ', '').casefold()
             name_ru = name[1].replace('Russian: ', '').casefold()
             if search_value.casefold() in name_ru or search_value.casefold() in name_en:
-                items_dict[pos] = (row_id, name_en, name_ru)
+                if by == 'pos':
+                    items_dict[pos] = (row_id, name_en, name_ru)
+                elif by == 'id':
+                    items_dict[row_id] = (pos, name_en, name_ru)
         if len(items_dict) == 0:
             print('no items found in subcat {}!!'.format(subcat_id))
         return items_dict
@@ -150,20 +153,6 @@ class CatInterface:
             for item in lineitems:
                 self.session.get(URLs.URL_catering_delete_lineitem_confirm.format(lineitem_id=item))
 
-    def __delete_whole_menu(self, search_value):  # recursively delete top level category with all content
-        parent_cat = self.get_cat_ids(search_value, exactly=True)
-        parent_cat_name = list(parent_cat.keys())[0]
-        parent_cat_id = parent_cat[parent_cat_name][0]
-        print('we\'re about to delete whole {} {} menu'.format(parent_cat_id, parent_cat_name))
-        if input('ok? y/n') == 'y':
-            subcat_ids = self.get_subcat_ids(parent_cat_id)
-            for subcat_id, subcat in subcat_ids.items():
-                items = self.get_items_in_subcat(subcat_id)
-                for item_pos, item in items.items():
-                    self.delete_item(item[0], confirm=False)
-                self.delete_cat(subcat_id, subcat[1], confirm=False)
-            self.delete_cat(parent_cat_id, parent_cat_name, confirm=False)
-
     def edit_allergens(self, name, item_id):
         name_to_num = {'nuts': 4, 'gluten': 5, 'lactose': 6, 'fish': 8, 'eggs': 22, 'milk': 25, 'mustard': 28,
                        'clams': 31, 'soy': 34, 'cereals': 37, 'sesame': 40, 'celery': 43, 'shrimps': 46,
@@ -196,3 +185,18 @@ class CatInterface:
         allergens = json.loads(allergens.content)['data']
         allergens = [BeautifulSoup(a['name_translations'], 'html.parser').text.split()[1].casefold() for a in allergens]
         return allergens
+
+    def delete_whole_menu(self, search_value):  # recursively delete top level category with all content
+        parent_cat = self.get_cat_ids(search_value, exactly=True)
+        parent_cat_name = list(parent_cat.keys())[0]
+        parent_cat_id = parent_cat[parent_cat_name][0]
+        print('we\'re about to delete whole {} {} menu'.format(parent_cat_id, parent_cat_name))
+        if input('ok? y/n') == 'y':
+            subcat_ids = self.get_subcat_ids(parent_cat_id)
+            for subcat_id, subcat in subcat_ids.items():
+                items = self.get_items_in_subcat(subcat_id, by='id')
+                for item_id, item in items.items():
+                    print("deleting", item[2])
+                    self.delete_item(item_id, confirm=False)
+                self.delete_cat(subcat_id, subcat[1], confirm=False)
+            self.delete_cat(parent_cat_id, parent_cat_name, confirm=False)
