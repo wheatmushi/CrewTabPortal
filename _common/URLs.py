@@ -61,11 +61,6 @@ URL_catering_delete_lineitem_confirm = 'core/catering/line_items/delete_confirm/
 URL_catering_delete_category_confirm = 'core/catering/categories/delete_confirmed/{category_id}'
 
 
-
-
-
-
-
 #  MONITORING DATA
 # user syncs from flight status monitor BY staff_id & departure_airport & flight_number & departure_date & length
 URL_monitor_syncs = 'core/monitoring/ajax/flight_status_monitor/search?draw=23&columns%5B0%5D%5Bdata%5D=staffId&columns%5B0%5D%5Bname%5D=staffId&columns%5B0%5D%5Bsearchable%5D=true&columns%5B0%5D%5Borderable%5D=true&columns%5B0%5D%5Bsearch%5D%5Bvalue%5D={staff_id}&columns%5B0%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B1%5D%5Bdata%5D=flightNumber&columns%5B1%5D%5Bname%5D=flightNumber&columns%5B1%5D%5Bsearchable%5D=true&columns%5B1%5D%5Borderable%5D=true&columns%5B1%5D%5Bsearch%5D%5Bvalue%5D={flight_number}&columns%5B1%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B2%5D%5Bdata%5D=departureAirport&columns%5B2%5D%5Bname%5D=departureAirport&columns%5B2%5D%5Bsearchable%5D=true&columns%5B2%5D%5Borderable%5D=true&columns%5B2%5D%5Bsearch%5D%5Bvalue%5D={departure_airport}&columns%5B2%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B3%5D%5Bdata%5D=arrivalAirport&columns%5B3%5D%5Bname%5D=arrivalAirport&columns%5B3%5D%5Bsearchable%5D=true&columns%5B3%5D%5Borderable%5D=true&columns%5B3%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B3%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B4%5D%5Bdata%5D=departureDate&columns%5B4%5D%5Bname%5D=departureDate&columns%5B4%5D%5Bsearchable%5D=true&columns%5B4%5D%5Borderable%5D=true&columns%5B4%5D%5Bsearch%5D%5Bvalue%5D={departure_date}&columns%5B4%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B5%5D%5Bdata%5D=scheduledDepartureDateTime&columns%5B5%5D%5Bname%5D=scheduledDepartureDateTime&columns%5B5%5D%5Bsearchable%5D=true&columns%5B5%5D%5Borderable%5D=true&columns%5B5%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B5%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B6%5D%5Bdata%5D=synchronizationDate&columns%5B6%5D%5Bname%5D=synchronizationDate&columns%5B6%5D%5Bsearchable%5D=true&columns%5B6%5D%5Borderable%5D=true&columns%5B6%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B6%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B7%5D%5Bdata%5D=lastUpdate&columns%5B7%5D%5Bname%5D=lastUpdate&columns%5B7%5D%5Bsearchable%5D=true&columns%5B7%5D%5Borderable%5D=true&columns%5B7%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B7%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B8%5D%5Bdata%5D=deviceId&columns%5B8%5D%5Bname%5D=deviceId&columns%5B8%5D%5Bsearchable%5D=true&columns%5B8%5D%5Borderable%5D=true&columns%5B8%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B8%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B9%5D%5Bdata%5D=bookedCount&columns%5B9%5D%5Bname%5D=bookedCount&columns%5B9%5D%5Bsearchable%5D=true&columns%5B9%5D%5Borderable%5D=true&columns%5B9%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B9%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B10%5D%5Bdata%5D=checkinCount&columns%5B10%5D%5Bname%5D=checkinCount&columns%5B10%5D%5Bsearchable%5D=true&columns%5B10%5D%5Borderable%5D=true&columns%5B10%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B10%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B11%5D%5Bdata%5D=boardedCount&columns%5B11%5D%5Bname%5D=boardedCount&columns%5B11%5D%5Bsearchable%5D=true&columns%5B11%5D%5Borderable%5D=true&columns%5B11%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B11%5D%5Bsearch%5D%5Bregex%5D=false&order%5B0%5D%5Bcolumn%5D=7&order%5B0%5D%5Bdir%5D=desc&start=0&length={length}&search%5Bvalue%5D=&search%5Bregex%5D=false&_=1574846695854'
@@ -78,11 +73,6 @@ admin/users/{}
 admin/users/{}/delete
 admin/users/{}/edit
 admin/users/{}/reset_password
-
-
-core/catering/items/add
-core/catering/items/display/{}
-core/catering/items/delete/{}
 
 core/monitoring/manifests
 core/monitoring/flight_status_monitor

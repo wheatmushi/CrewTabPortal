@@ -1,5 +1,5 @@
 import URLs
-from datetime import datetime
+from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import requests
 
@@ -47,3 +47,17 @@ def acc_auth():  # just draft
     params = ('__EVENTTARGET', '__EVENTARGUMENT', '__VIEWSTATE', '__VIEWSTATEGENERATOR', '__EVENTVALIDATION')
     r = session.get('https://acc.mobility.sita.aero/admin/Login.aspx?chcode=8301')
     soup = BeautifulSoup(r.content, 'html.parser')
+
+
+def date_iterator(start_date, num_of_days):  # iterate over days end generate new str with date
+    for i in range(0,num_of_days):
+        cur_date = datetime.strptime(start_date, '%Y-%m-%d')
+        date = '{:%Y-%m-%d}'.format(cur_date + timedelta(days=i))
+        yield date
+
+
+def dtrowid_to_index(df):  # just change pd.Dataframe indexes to original DB IDs
+    df['DT_RowId'] = df['DT_RowId'].map(lambda s: s.replace(',', ''))
+    df['DT_RowId'] = df['DT_RowId'].astype('int')
+    df = df.set_index('DT_RowId')
+    return df

@@ -5,6 +5,7 @@ from datetime import datetime
 import pandas as pd
 import URLs
 import auth
+import crew_utils
 
 
 class CrewInterface:
@@ -45,7 +46,7 @@ class CrewInterface:
             f = json.loads(f.content)['data']
             flights.append(pd.DataFrame(data=f))
         flights = pd.concat(flights, axis=0, sort=False)
-        flights = self.dtrowid_to_index(flights)
+        flights = crew_utils.dtrowid_to_index(flights)
         flights = flights.drop('details', axis=1)
         if flight_numbers:
             flights = flights[flights['flightNumber'].isin(flight_numbers)]
@@ -61,7 +62,7 @@ class CrewInterface:
         r = self.session.get(URLs.URL_users_list.format(length=total, search_value=search_value, is_enabled=is_enabled))
         full_table = json.loads(r.content)['data']
         full_table = pd.DataFrame(data=full_table)
-        full_table = self.dtrowid_to_index(full_table)
+        full_table = crew_utils.dtrowid_to_index(full_table)
         full_table['enabled'] = full_table['enabled'].map(lambda s: BeautifulSoup(s, 'html.parser').text)
         full_table = full_table.drop(['image', 'display', 'delete'], axis=1)
         return full_table
@@ -73,61 +74,25 @@ class CrewInterface:
         crews = pd.DataFrame(data=r)
         return crews
 
-    def dtrowid_to_index(self, df):  # just change pd.Dataframe indexes to original DB IDs
-        df['DT_RowId'] = df['DT_RowId'].map(lambda s: s.replace(',', ''))
-        df['DT_RowId'] = df['DT_RowId'].astype('int')
-        df = df.set_index('DT_RowId')
-        return df
-
     def close(self):
         self.session.close()
 
-    def get_syncs(self, departure_dates, staff_id='', flight_number='', departure_airport=''):
+    def get_syncs(self, departure_dates=('',), staff_id='', flight_number='', departure_airports=('',)):
         # load user synchronizations from server
         print('parsing flight status syncs...')
         syncs = []
-        if type(departure_dates) is str:
-            departure_dates = ('',)
+        if flight_number:
+            flight_number = '0'*(4-len(flight_number)) + flight_number
         for date in departure_dates:
-            r = self.session.get(URLs.URL_monitor_syncs.format(departure_date=date, flight_number=flight_number,
-                                                           departure_airport=departure_airport, staff_id=staff_id,
-                                                           length=10000))
-            r = json.loads(r.content)['data']
-            syncs.append(pd.DataFrame(data=r))
+            for airport in departure_airports:
+                r = self.session.get(URLs.URL_monitor_syncs.format(departure_date=date, flight_number=flight_number,
+                                                                   departure_airport=airport, staff_id=staff_id,
+                                                                   length=10000))
+                r = json.loads(r.content)['data']
+                syncs.append(pd.DataFrame(data=r))
         syncs = pd.concat(syncs, axis=0, sort=False)
-        syncs = self.dtrowid_to_index(syncs)
-        syncs = syncs.drop(['deviceId', 'departureDate'], axis=1)
+        syncs = crew_utils.dtrowid_to_index(syncs)
         syncs['lastUpdate'] = syncs['lastUpdate'].astype('datetime64')
         syncs['scheduledDepartureDateTime'] = syncs['scheduledDepartureDateTime'].astype('datetime64')
         syncs['synchronizationDate'] = syncs['synchronizationDate'].astype('datetime64')
         return syncs
-
-"""
-s = get_syncs(['2019-11-24', '2019-11-25', '2019-11-26', '2019-11-27'])
-flights = get_flights_table(['2019-11-24', '2019-11-25', '2019-11-26', '2019-11-27'])
-
-s2['diff'] = (s2['synchronizationDate'] - s2['scheduledDepartureDateTime'])/pd.Timedelta(minutes=1)
-def interval(i):
-    if -9 <= i < 30: return 'full'
-    if -38 <= i <-9: return 'registration'
-    if -4320 <= i <-38: return 'base'
-    return 'late_data'
-s2['interval'] = s2['diff'].map(lambda i: interval(i))
-s2['order'] = s2['interval'].map({'full':0, 'registration':1, 'base': 2, 'late_data': 4})
-s2 = s2.sort_values('order')
-q2 = s2.drop_duplicates(['staffId', 'flightNumber', 'scheduledDepartureDateTime'], keep='first')
-q2.groupby('interval').size()
-"""
-"""
-for f in [f for f in os.listdir(path_to_fix) if f.endswith('.csv')]:
-    df = pd.read_csv(os.path.join(path_to_fix, f), sep='|', dtype='object')
-    df_new = df
-    rounds = set(df['subcategory name en'].values)
-    for r in rounds:
-        if r in spml['subcategory name en'].values:
-            df_new = pd.concat([df_new, spml[spml['subcategory name en'] == r]])
-    df_new['subcategory position'] = df_new['subcategory position'].astype('int64')
-    df_new['item position'] = df_new['item position'].astype('int64')
-    df_new = df_new.sort_values(['subcategory name en', 'item position'])
-    df_new.to_csv(path_to_save + '/' + f, sep='|', index=False)
-"""

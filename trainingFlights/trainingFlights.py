@@ -14,14 +14,14 @@ flights = ['0100', '0102', '0110', '0106', '0200', '0204', '0260', '0208', '0290
 dates = [datetime.strftime(datetime.now() + timedelta(days=d), '%Y-%m-%d') for d in range(-3, 0)]
 
 url_main = 'https://admin-su.crewplatform.aero/'
-itf = CrewInterface(url_main)
+interface = CrewInterface(url_main)
 
-full_crew_table = itf.get_portal_users(is_enabled=True)
-flights_table = itf.get_flights_table(dates, flights)
+full_crew_table = interface.get_portal_users(is_enabled=True)
+flights_table = interface.get_flights_table(dates, flights)
 
 txt = open('training_flights_' + datetime.strftime(datetime.now(), '%Y_%m_%d') + '.txt', 'w')
 for idx, flight in flights_table.iterrows():
-    crews = itf.get_flight_crews(idx)
+    crews = interface.get_flight_crews(idx)
     if not crews.empty:
         crews = crews[crews['staffId'].isin(full_crew_table['staffId'])]  # filter only enabled user for every flight
         txt.write('SU' + flight['flightNumber'] + '  ' + flight['arrivalAirport'] + '  ' + flight['departureDate'] + '\n')
@@ -30,4 +30,4 @@ for idx, flight in flights_table.iterrows():
     txt.write('\n')
 
 txt.close()
-itf.close()
+interface.close()
