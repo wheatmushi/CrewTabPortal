@@ -35,7 +35,8 @@ class CrewInterface:
         else:
             return base_info['Scheduled Departure'], base_info['Scheduled Arrival']
 
-    def get_flights_table(self, dates_range, flight_numbers=None, length=1100):  # get flight table for range of dates
+    def get_flights_table(self, dates_range, flight_numbers=None, length=1100, id_only=False):
+        # get flight table for range of dates OR one flight DB ID
         flights = []
         if type(dates_range) is str:
             dates_range = (dates_range,)
@@ -52,6 +53,8 @@ class CrewInterface:
             flights = flights[flights['flightNumber'].isin(flight_numbers)]
         if flights.empty:
             print('no flights found!!')
+        if id_only:
+            return flights.index[0]
         return flights
 
     def get_portal_users(self, is_enabled=False, search_value=''):  # get all CrewTab users (or enabled only)
@@ -77,17 +80,17 @@ class CrewInterface:
     def close(self):
         self.session.close()
 
-    def get_syncs(self, departure_dates=('',), staff_id='', flight_number='', departure_airports=('',)):
+    def get_syncs(self, departure_dates=('',), staff_id='', flight_number='', departure_airports=('',), length=20000):
         # load user synchronizations from server
-        print('parsing flight status syncs...')
         syncs = []
         if flight_number:
             flight_number = '0'*(4-len(flight_number)) + flight_number
         for date in departure_dates:
             for airport in departure_airports:
+                print('parsing flight status syncs for {}...'.format(date))
                 r = self.session.get(URLs.URL_monitor_syncs.format(departure_date=date, flight_number=flight_number,
                                                                    departure_airport=airport, staff_id=staff_id,
-                                                                   length=10000))
+                                                                   length=length))
                 r = json.loads(r.content)['data']
                 syncs.append(pd.DataFrame(data=r))
         syncs = pd.concat(syncs, axis=0, sort=False)
