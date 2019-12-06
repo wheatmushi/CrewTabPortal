@@ -13,8 +13,8 @@ from CrewInterface import CrewInterface
 import json
 
 
-start_date = '2019-12-01'
-num_of_days = 4
+start_date = '2019-11-01'
+num_of_days = 30
 is_cm = True  # enable only if different stats for CM and FA required
 airports = []  # only build stats for this airports
 url_main = 'https://admin-su.crewplatform.aero/'
@@ -43,14 +43,14 @@ def check_intervals(df):  # create interval/passengers columns for statistic
     df['interval'] = df['difference'].map(lambda i: interval(i))
     df['passengers'] = df.apply(lambda s: passengers(s), axis=1)
     df = df.drop_duplicates(['staffId', 'flightNumber', 'scheduledDepartureDateTime', 'interval', 'passengers'])
-    interval_ordering = ['full', 'registration', 'base', 'late_data']
-    passengers_ordering = ['ok', 'less_than_expected', 'no_data']
-    df['interval'] = pd.Categorical(df['interval'], categories=interval_ordering, ordered=True)
-    df['passengers'] = pd.Categorical(df['passengers'], categories=passengers_ordering, ordered=True)
+    interval_type = pd.api.types.CategoricalDtype(categories=['full', 'registration', 'base', 'late_data'], ordered=True)
+    passengers_type = pd.api.types.CategoricalDtype(categories=['ok', 'less_than_expected', 'no_data'], ordered=True)
+    df['interval'] = df['interval'].astype(interval_type)
+    df['passengers'] = df['passengers'].astype(passengers_type)
     return df
 
 
-def build_stats(df, stat_type):
+def build_stats(interface, df, dates, stat_type='overall'):
     if stat_type == 'overall':
         stats = df.sort_values('interval').\
             drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first').\
@@ -61,35 +61,41 @@ def build_stats(df, stat_type):
             drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first').\
             groupby(['departureAirport', 'interval']).\
             size()
-        stats = stats.unstack().fillna(0).astype('int')
     if stat_type == 'staff':
         stats = df.sort_values('interval').\
             drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first').\
             groupby(['staffId', 'interval']).\
             size()
-        stats = stats.unstack().fillna(0).astype('int')
+    if stat_type == 'CM':
+        df = get_crew_roles(interface, df, dates)
+        stats = df.sort_values('interval'). \
+            drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first'). \
+            groupby(['position', 'interval']). \
+            size()
+    return stats.unstack().fillna(0).astype('int')
 
 
-def get_crew_roles(interface, df):  # build crew positions table for all flights in df, use carefully as it add 2
-    # additional http-requests for every flight in table
-    df['position'] = ''
+def get_crew_roles(interface, df, dates):  # add crew positions in syncs dataframe, this will slow script with 1
+    # additional http-requests per every flight in table (about 800 requests for one day)
+    t = time()
     check_list = df.drop_duplicates(['flightNumber', 'departureDate'])
+    flights = interface.get_flights_table(dates_range=dates)
+    print('parsing crew roles for {} flights...'.format(len(flights)))
     crew_list = []
     for i, row in check_list.iterrows():
         date = row['scheduledDepartureDateTime'].strftime('%Y-%m-%d')
-        #
-        flight_id = interface.get_flights_table(dates_range=date, flight_numbers=row['flightNumber'], id_only=True)
-        # need to replace flight_id with one http-request with all ids for this dates
+        flight_id = flights[(flights['flightNumber'] == row['flightNumber']) &
+                            (flights['departureDate'] == row['departureDate'])].index[0]
         crews = interface.get_flight_crews(flight_id)
         crews['scheduledDepartureDateTime'] = row['scheduledDepartureDateTime']
         crews['flightNumber'] = row['flightNumber']
         crew_list.append(crews)
     crews = pd.concat(crew_list, axis=0)
-    # pd.merge(df, crews)
+    crews = crews.drop(['name', 'email', 'DT_RowId'], axis=1)
+    df = df.merge(crews, how='left', on=['staffId', 'flightNumber', 'scheduledDepartureDateTime'])
+    print('crew roles parsing time {} seconds'.format(round(time() - t)))
+    return df
 
 
-
-
-df = pd.read_csv('db.csv', sep=';', index_col=0, dtype='object')
-df['scheduledDepartureDateTime'] = df['scheduledDepartureDateTime'].astype('datetime64')
-
+df = interface.get_syncs(departure_dates=crew_utils.date_iterator(start_date, num_of_days))
+df = get_crew_roles(interface, df, crew_utils.date_iterator(start_date, num_of_days))

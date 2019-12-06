@@ -2,6 +2,7 @@
 import json
 from bs4 import BeautifulSoup
 from datetime import datetime
+from time import time
 import pandas as pd
 import URLs
 import auth
@@ -37,6 +38,7 @@ class CrewInterface:
 
     def get_flights_table(self, dates_range, flight_numbers=None, length=1100, id_only=False):
         # get flight table for range of dates OR one flight DB ID
+        print('parsing flight table...')
         flights = []
         if type(dates_range) is str:
             dates_range = (dates_range,)
@@ -82,6 +84,7 @@ class CrewInterface:
 
     def get_syncs(self, departure_dates=('',), staff_id='', flight_number='', departure_airports=('',), length=20000):
         # load user synchronizations from server
+        t = time()
         syncs = []
         if flight_number:
             flight_number = '0'*(4-len(flight_number)) + flight_number
@@ -98,4 +101,5 @@ class CrewInterface:
         syncs['lastUpdate'] = syncs['lastUpdate'].astype('datetime64')
         syncs['scheduledDepartureDateTime'] = syncs['scheduledDepartureDateTime'].astype('datetime64')
         syncs['synchronizationDate'] = syncs['synchronizationDate'].astype('datetime64')
+        print('syncs parsing time {} seconds'.format(round(time() - t)))
         return syncs
