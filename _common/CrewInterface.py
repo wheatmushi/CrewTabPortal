@@ -103,3 +103,17 @@ class CrewInterface:
         syncs['synchronizationDate'] = syncs['synchronizationDate'].astype('datetime64')
         print('syncs parsing time {} seconds'.format(round(time() - t)))
         return syncs
+
+    def get_reports_table(self, url_params):
+        if 'admin-fv' in self.url_main:
+            url = URLs.URL_monitor_reports_FV
+        if 'admin-su' in self.url_main:
+            url = URLs.URL_monitor_reports_SU
+        url = url.format(**url_params)
+        reports = self.session.get(url)
+        reports = pd.DataFrame(data=json.loads(reports.content)['data'])
+        #reports = reports.drop(['DT_RowId', 'checkbox', 'download', 'tag'], axis=1, errors='ignore')
+        #reports['id'] = reports['id'].map(lambda x: x.replace(',', '')).astype('int')
+        #reports = reports.set_index('id')
+        reports['lastUpdate'] = reports['lastUpdate'].astype('datetime64')
+        return reports
