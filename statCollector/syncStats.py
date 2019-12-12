@@ -13,9 +13,8 @@ from CrewInterface import CrewInterface
 import json
 
 
-start_date = '2019-11-01'
-num_of_days = 30
-is_cm = True  # enable only if different stats for CM and FA required
+start_date = '2019-12-01'
+num_of_days = 1
 airports = []  # only build stats for this airports
 url_main = 'https://admin-su.crewplatform.aero/'
 interface = CrewInterface(url_main)
@@ -24,7 +23,7 @@ pd.set_option('display.width', 320)
 pd.set_option('display.max_columns', 30)
 
 
-def check_intervals(df):  # create interval/passengers columns for statistic
+def check_intervals(df, drop_duplicates=True):  # create interval/passengers columns for statistic
 
     def interval(i):
         if -9 <= i < 30: return 'full'
@@ -36,13 +35,15 @@ def check_intervals(df):  # create interval/passengers columns for statistic
         m = {'full': 'boardedCount', 'registration': 'checkinCount', 'base': 'bookedCount', 'late_data': 'boardedCount'}
         value_to_check = int(s[m[s['interval']]])
         if value_to_check == 0: return 'no_data'
+        if s['interval'] == 'late_data': return
         if value_to_check < 0.7 * int(s['bookedCount']): return 'less_than_expected'
         return 'ok'
 
     df['difference'] = (df['synchronizationDate'] - df['scheduledDepartureDateTime'])/pd.Timedelta(minutes=1)
     df['interval'] = df['difference'].map(lambda i: interval(i))
     df['passengers'] = df.apply(lambda s: passengers(s), axis=1)
-    df = df.drop_duplicates(['staffId', 'flightNumber', 'scheduledDepartureDateTime', 'interval', 'passengers'])
+    if drop_duplicates:
+        df = df.drop_duplicates(['staffId', 'flightNumber', 'scheduledDepartureDateTime', 'interval', 'passengers'])
     interval_type = pd.api.types.CategoricalDtype(categories=['full', 'registration', 'base', 'late_data'], ordered=True)
     passengers_type = pd.api.types.CategoricalDtype(categories=['ok', 'less_than_expected', 'no_data'], ordered=True)
     df['interval'] = df['interval'].astype(interval_type)
@@ -50,28 +51,33 @@ def check_intervals(df):  # create interval/passengers columns for statistic
     return df
 
 
-def build_stats(interface, df, dates, stat_type='overall'):
-    if stat_type == 'overall':
-        stats = df.sort_values('interval').\
-            drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first').\
-            groupby('interval').\
-            size()
-    if stat_type == 'airports':
-        stats = df.sort_values('interval').\
-            drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first').\
-            groupby(['departureAirport', 'interval']).\
-            size()
-    if stat_type == 'staff':
-        stats = df.sort_values('interval').\
-            drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first').\
-            groupby(['staffId', 'interval']).\
-            size()
-    if stat_type == 'CM':
-        df = get_crew_roles(interface, df, dates)
-        stats = df.sort_values('interval'). \
-            drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first'). \
-            groupby(['position', 'interval']). \
-            size()
+def build_stats(interface, df, dates, aggregation='overall', stat_type='common'):
+    # aggregation for overall period/hourly/daily
+    # type of stats: common/airports/staff_id/CM_FA
+    if aggregation == 'overall':
+        if stat_type == 'common':
+            stats = df.sort_values('interval').\
+                drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first').\
+                groupby('interval').\
+                size()
+        if stat_type == 'airports':
+            stats = df.sort_values('interval').\
+                drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first').\
+                groupby(['departureAirport', 'interval']).\
+                size()
+        if stat_type == 'staff':
+            stats = df.sort_values('interval').\
+                drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first').\
+                groupby(['staffId', 'interval']).\
+                size()
+        if stat_type == 'CM':
+            df = get_crew_roles(interface, df, dates)
+            stats = df.sort_values('interval'). \
+                drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first'). \
+                groupby(['position', 'interval']). \
+                size()
+
+
     return stats.unstack().fillna(0).astype('int')
 
 
@@ -98,4 +104,5 @@ def get_crew_roles(interface, df, dates):  # add crew positions in syncs datafra
 
 
 df = interface.get_syncs(departure_dates=crew_utils.date_iterator(start_date, num_of_days))
+df = check_intervals(df)
 df = get_crew_roles(interface, df, crew_utils.date_iterator(start_date, num_of_days))

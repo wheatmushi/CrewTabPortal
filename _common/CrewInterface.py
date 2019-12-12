@@ -1,4 +1,4 @@
-# interface for CrewTab portal access
+# interface for CrewTab portal access: flights, syncs, reports, users
 import json
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -15,7 +15,9 @@ class CrewInterface:
         self.session = auth.SessionCrewTabPortal(url_main)
         self.session.authentication()
 
-    def get_flight_info(self, flight_id, all_info=False):  # get flight information about times of dep/arr and passengers
+    def get_flight_info(self, flight_id, all_info=False):
+        # get flight information about times of dep/arr and booked/checked in/boarded passengers
+        # if not all_info then returns only scheduled departure/arrival times
         r = self.session.get(URLs.URL_flights_base_data.format(flight_id=flight_id))
         soup = BeautifulSoup(r.content, 'html.parser')
         tables = soup.find_all('table')
@@ -72,7 +74,7 @@ class CrewInterface:
         full_table = full_table.drop(['image', 'display', 'delete'], axis=1)
         return full_table
 
-    def get_flight_crews(self, flight_id):  # get crews for particular flight
+    def get_flight_crews(self, flight_id):  # get crews for particular flight by flight DB ID
         print('parsing data for flight ID', flight_id)
         r = self.session.get(URLs.URL_flight_crews.format(flight_id=flight_id, length=30))
         r = json.loads(r.content)['data']
@@ -83,7 +85,7 @@ class CrewInterface:
         self.session.close()
 
     def get_syncs(self, departure_dates=('',), staff_id='', flight_number='', departure_airports=('',), length=20000):
-        # load user synchronizations from server
+        # load users synchronizations from server
         t = time()
         syncs = []
         if flight_number:
@@ -105,6 +107,8 @@ class CrewInterface:
         return syncs
 
     def get_reports_table(self, url_params):
+        # load crew reports records, all parameters in url_params dict (start/end dates, form id, staff id, flight num,
+        # tail number, dep/arr airport, length of list
         if 'admin-fv' in self.url_main:
             url = URLs.URL_monitor_reports_FV
         if 'admin-su' in self.url_main:

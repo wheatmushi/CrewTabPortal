@@ -1,3 +1,5 @@
+#  load records for crew reports and build statistic for app usage
+
 import os
 import json
 import pandas as pd
@@ -31,4 +33,4 @@ params = {'start_date': '2019-12-02',
 
 reports = interface.get_reports_table(params)
 grp = reports.groupby([reports['lastUpdate'].dt.day, reports['lastUpdate'].dt.hour]).size()
-grp.to_csv('reports_by_hour.csv')
+grp.to_csv('reports_by_hour_{}.csv'.format(start_date))
