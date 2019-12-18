@@ -74,8 +74,9 @@ class CrewInterface:
         full_table = full_table.drop(['image', 'display', 'delete'], axis=1)
         return full_table
 
-    def get_flight_crews(self, flight_id):  # get crews for particular flight by flight DB ID
-        print('parsing data for flight ID', flight_id)
+    def get_flight_crews(self, flight_id, log=True):  # get crews for particular flight by flight DB ID
+        if log:
+            print('parsing data for flight ID', flight_id)
         r = self.session.get(URLs.URL_flight_crews.format(flight_id=flight_id, length=30))
         r = json.loads(r.content)['data']
         crews = pd.DataFrame(data=r)
@@ -85,7 +86,7 @@ class CrewInterface:
         self.session.close()
 
     def get_syncs(self, departure_dates=('',), staff_id='', flight_number='', departure_airports=('',), length=20000):
-        # load users synchronizations from server
+        # load user's synchronizations from server
         t = time()
         syncs = []
         if flight_number:
