@@ -108,7 +108,7 @@ def get_crew_roles(interface, df, dates):  # add crew positions in syncs datafra
     check_list = df.drop_duplicates(['flightNumber', 'departureDate'])
     if 'temp_crews.csv' in os.listdir('.'):
         if input('load crew data from temporary file? y/n') == 'y':
-            temp_crew_table = pd.read_csv('temp_crews.csv', index_col=1, sep=',')
+            temp_crew_table = pd.read_csv('temp_crews.csv', index_col=0, sep=',')
             check_list = check_list[~((check_list['flightNumber'].isin(temp_crew_table['flightNumber'])) &
                                     (check_list['departureDate'].isin(temp_crew_table['departureDate'])))]
     flights = interface.get_flights_table(dates_range=dates)
