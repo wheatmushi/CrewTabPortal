@@ -10,8 +10,8 @@ from crew_utils import date_iterator
 from CrewInterface import CrewInterface
 
 
-start_date = '2019-11-18'
-num_of_days = 30
+start_date = '2019-12-18'
+num_of_days = 7
 dates = [d for d in date_iterator(start_date, num_of_days)]
 airports = ['']  # only build stats for this airports
 
@@ -40,15 +40,13 @@ def check_intervals(dataframe, drop_duplicates=True):  # create interval/passeng
         return 'ok'
     df = dataframe.copy(deep=True)
     routes_table = pd.read_csv(os.path.join('..', '_DB', 'catering', 'afl_routes.csv'), sep=',')
+    df['synchronizationDate'] = df['synchronizationDate'].astype('datetime64')
+    df['scheduledDepartureDateTime'] = df['scheduledDepartureDateTime'].astype('datetime64')
     df['difference'] = (df['synchronizationDate'] - df['scheduledDepartureDateTime'])/pd.Timedelta(minutes=1)
     df['interval'] = df.apply(lambda s: interval(s, routes_table), axis=1)
     df['passengers'] = df.apply(lambda s: passengers(s), axis=1)
     if drop_duplicates:
         df = df.drop_duplicates(['staffId', 'flightNumber', 'scheduledDepartureDateTime', 'interval', 'passengers'])
-    interval_type = pd.api.types.CategoricalDtype(categories=['full', 'registration', 'base', 'late_data'], ordered=True)
-    passengers_type = pd.api.types.CategoricalDtype(categories=['ok', 'incorrect', 'no_data'], ordered=True)
-    df['interval'] = df['interval'].astype(interval_type)
-    df['passengers'] = df['passengers'].astype(passengers_type)
     return df
 
 
@@ -63,6 +61,11 @@ def build_stats(interface, dataframe, dates, kind, index, columns, percent_axis=
     df = df[df['position'].isin(('CM', 'FA'))]
     df['day'] = df['scheduledDepartureDateTime'].dt.date
     df['hour'] = df['scheduledDepartureDateTime'].dt.hour
+    interval_type = pd.api.types.CategoricalDtype(categories=['full', 'registration', 'base', 'late_data'],
+                                                  ordered=True)
+    passengers_type = pd.api.types.CategoricalDtype(categories=['ok', 'incorrect', 'no_data'], ordered=True)
+    df['interval'] = df['interval'].astype(interval_type)
+    df['passengers'] = df['passengers'].astype(passengers_type)
 
     if kind == 'passengers':
         df = df.sort_values('passengers')
@@ -101,7 +104,7 @@ def build_stats(interface, dataframe, dates, kind, index, columns, percent_axis=
     return stats.sort_index(ascending=False)
 
 
-def get_crew_roles(interface, df, dates):  # add crew positions in syncs dataframe, this will slow script with 1
+def get_crew_roles(interface, df, start_date, num_of_days):  # add crew positions in syncs dataframe, this will slow script with 1
     # additional http-request per every flight in table (about 800 requests for one day)
     # NEED TO ADD save temp result mechanism for poor internet connection
     t = time()
@@ -111,7 +114,7 @@ def get_crew_roles(interface, df, dates):  # add crew positions in syncs datafra
             temp_crew_table = pd.read_csv('temp_crews.csv', index_col=0, sep=',')
             check_list = check_list[~((check_list['flightNumber'].isin(temp_crew_table['flightNumber'])) &
                                     (check_list['departureDate'].isin(temp_crew_table['departureDate'])))]
-    flights = interface.get_flights_table(dates_range=dates)
+    flights = interface.get_flights_table(start_date, num_of_days)
     print('parsing crew roles for {} flights...'.format(check_list.shape[0]))
     crew_list = []
     for i, row in check_list.iterrows():
@@ -120,6 +123,7 @@ def get_crew_roles(interface, df, dates):  # add crew positions in syncs datafra
         crews = interface.get_flight_crews(flight_id, log=False)
         crews['scheduledDepartureDateTime'] = row['scheduledDepartureDateTime']
         crews['flightNumber'] = row['flightNumber']
+        crews['departureDate'] = row['departureDate']
         crew_list.append(crews)
         if len(crew_list) % 500 == 0:
             print('completed', len(crew_list), 'flights of', check_list.shape[0])

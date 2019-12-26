@@ -38,12 +38,11 @@ class CrewInterface:
         else:
             return base_info['Scheduled Departure'], base_info['Scheduled Arrival']
 
-    def get_flights_table(self, dates_range, flight_numbers=None, length=1100, id_only=False):
+    def get_flights_table(self, start_date, num_of_days, flight_numbers=None, length=1100, id_only=False):
         # get flight table for range of dates OR one flight DB ID
         print('parsing flight table...')
         flights = []
-        if type(dates_range) is str:
-            dates_range = (dates_range,)
+        dates_range = crew_utils.date_iterator(start_date, num_of_days)
         if flight_numbers and type(flight_numbers) is str:
             flight_numbers = (flight_numbers,)
         for d in dates_range:
@@ -59,6 +58,7 @@ class CrewInterface:
             print('no flights found!!')
         if id_only:
             return flights.index[0]
+        flights['departureDate'] = flights['departureDate'].astype('datetime64')
         return flights
 
     def get_portal_users(self, is_enabled=False, search_value=''):  # get all CrewTab users (or enabled only)
@@ -107,18 +107,27 @@ class CrewInterface:
         print('syncs parsing time {} seconds'.format(round(time() - t)))
         return syncs
 
-    def get_reports_table(self, url_params):
+    def get_reports_table(self, start_date, num_of_days, url_params):
         # load crew reports records, all parameters in url_params dict (start/end dates, form id, staff id, flight num,
         # tail number, dep/arr airport, length of list
+        print('parsing reports table...')
         if 'admin-fv' in self.url_main:
             url = URLs.URL_monitor_reports_FV
         if 'admin-su' in self.url_main:
             url = URLs.URL_monitor_reports_SU
-        url = url.format(**url_params)
-        reports = self.session.get(url)
-        reports = pd.DataFrame(data=json.loads(reports.content)['data'])
-        #reports = reports.drop(['DT_RowId', 'checkbox', 'download', 'tag'], axis=1, errors='ignore')
-        #reports['id'] = reports['id'].map(lambda x: x.replace(',', '')).astype('int')
-        #reports = reports.set_index('id')
-        reports['lastUpdate'] = reports['lastUpdate'].astype('datetime64')
-        return reports
+        url_params['length'] = 10000
+        reports_table = []
+        dates_range = crew_utils.date_iterator(start_date, num_of_days)
+        for date in dates_range:
+            url_params['start_date'] = url_params['end_date'] = date
+            url_temp = url.format(**url_params)
+            reports = self.session.get(url_temp)
+            reports = json.loads(reports.content)['data']
+            reports_table.append(pd.DataFrame(data=reports))
+        reports_table = pd.concat(reports_table, axis=0, sort=False)
+        reports_table = crew_utils.dtrowid_to_index(reports_table)
+        reports_table = reports_table.drop(['manualProcessingProcessedDate', 'download', 'manualProcessingStaffId', 'id'],
+                               axis=1, errors='ignore')
+        reports_table['lastUpdate'] = reports_table['lastUpdate'].astype('datetime64')
+        reports_table['departureDate'] = reports_table['departureDate'].astype('datetime64')
+        return reports_table
