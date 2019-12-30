@@ -50,7 +50,7 @@ def acc_auth():  # just draft
 
 
 def date_iterator(start_date, num_of_days):  # iterate over days end generate new str with date
-    for i in range(0,num_of_days):
+    for i in range(min(num_of_days, 0), max(num_of_days, 0)):
         cur_date = datetime.strptime(start_date, '%Y-%m-%d')
         date = '{:%Y-%m-%d}'.format(cur_date + timedelta(days=i))
         yield date

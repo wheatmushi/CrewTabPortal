@@ -9,7 +9,7 @@ import pytz
 from datetime import datetime, timedelta
 from time import sleep
 sys.path.insert(1, os.path.join('..', '_common'))
-import common_utils
+import crew_utils
 import CrewInterface
 
 
@@ -39,9 +39,9 @@ class Menu:
             n = filename.split('.')[0].split('_')[0]
             name_en = n
             name_ru = n
-            return name_en, name_ru, common_utils.name_to_position[name_en]
+            return name_en, name_ru, crew_utils.name_to_position[name_en]
         if name_en:
-            return name_en, common_utils.name_to_position[name_en]
+            return name_en, crew_utils.name_to_position[name_en]
 
     def create_menu_cat_itself(self):  # create top-lvl category
         data = self.prepare(self.name_en, self.name_ru, self.position)
@@ -270,7 +270,7 @@ class LineItemTable:
             return pytz.utc.localize(utc_time).astimezone(pytz.timezone(zone))
 
         def separate_menus(row):
-            if row['dep_airport'] in common_utils.name_to_position.keys():
+            if row['dep_airport'] in crew_utils.name_to_position.keys():
                 return 'individual'
             elif row['duration'] < 120:
                 return 'less 2 hrs'
