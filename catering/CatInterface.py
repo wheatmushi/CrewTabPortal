@@ -183,7 +183,8 @@ class CatInterface:
     def get_allergens(self, item_id, search_value='', length=20):
         allergens = self.session.get(URLs.URL_catering_allergens.format(item_id=item_id, search_value=search_value, length=length))
         allergens = json.loads(allergens.content)['data']
-        allergens = [BeautifulSoup(a['name_translations'], 'html.parser').text.split()[1].casefold() for a in allergens]
+        allergens = [BeautifulSoup(a['name_translations'], 'html.parser').text.split('\n')[0].split(': ')[1].casefold()
+                     for a in allergens]
         return allergens
 
     def delete_whole_menu(self, search_value):  # recursively delete top level category with all content
