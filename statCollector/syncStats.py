@@ -10,8 +10,8 @@ from crew_utils import date_iterator
 from CrewInterface import CrewInterface
 
 
-start_date = '2019-12-18'
-num_of_days = 7
+start_date = '2020-02-19'
+num_of_days = 0
 dates = [d for d in date_iterator(start_date, num_of_days)]
 airports = ['']  # only build stats for this airports
 
@@ -50,14 +50,14 @@ def check_intervals(dataframe, drop_duplicates=True):  # create interval/passeng
     return df
 
 
-def build_stats(interface, dataframe, dates, kind, index, columns, percent_axis=None):
+def build_stats(interface, dataframe, start_date, num_of_days, kind, index, columns, percent_axis=None):
     # kind: passengers (for passengers data) or interval (for sync intervals)
     # index: rows for stat table (day, hour, departureAirport, staffId, passengers, etc), group by most left first
     # columns: columns for stat table (position, interval, etc), group by most left first
     # percent_axis: 0 for percent count along column, 1 for percent count along row, None for raw numbers
     df = dataframe.copy(deep=True)
     if ('position' in index or 'position' in columns) and 'position' not in df.columns:
-        df = get_crew_roles(interface, df, dates)
+        df = get_crew_roles(interface, df, start_date, num_of_days)
     df = df[df['position'].isin(('CM', 'FA'))]
     df['day'] = df['scheduledDepartureDateTime'].dt.date
     df['hour'] = df['scheduledDepartureDateTime'].dt.hour
@@ -131,7 +131,7 @@ def get_crew_roles(interface, df, start_date, num_of_days):  # add crew position
             temp_crew_table.to_csv('temp_crews.csv')
     crews = pd.concat(crew_list, axis=0, sort=False)
     crews = crews.drop(['name', 'email', 'DT_RowId'], axis=1)
-    df = df.merge(crews, how='left', on=['staffId', 'flightNumber', 'scheduledDepartureDateTime'])
+    df = df.merge(crews, how='left', on=['staffId', 'flightNumber', 'scheduledDepartureDateTime', 'departureDate'])
     os.remove('temp_crews.csv')
     print('crew roles parsing time {} seconds'.format(round(time() - t)))
     return df
@@ -141,4 +141,4 @@ url_main = 'https://admin-su.crewplatform.aero/'
 interface = CrewInterface(url_main)
 df = interface.get_syncs(departure_dates=dates, departure_airports=airports)
 df = check_intervals(df)
-df = get_crew_roles(interface, df, dates)
+df = get_crew_roles(interface, df, start_date, num_of_days)
