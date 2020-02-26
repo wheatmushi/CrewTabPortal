@@ -21,10 +21,8 @@ filter_numbers = True
 pd.set_option('display.width', 320)
 pd.set_option('display.max_columns', 30)
 
-interface = CrewInterface(url_main)
 
-
-def get_flights_table():
+def get_flights_table(interface):  # NEED TO REPLACE for WITH RANGE OF DATES
     df = interface.get_flights_table(start_date, -3)
     if os.path.exists(path_to_DB):
         df_local = pd.read_csv(path_to_DB, index_col=0, parse_dates='departureDate')
@@ -44,20 +42,81 @@ def get_flights_table():
 
 
 def build_stats(df, days=7):
-    def mean_for_weekday(day):
-        s = stats.iloc[:-3, :]
-        return round(s[s['dayOfWeek'] == day]['flightsCount'].mean())
-
     stats = pd.DataFrame(df.groupby('departureDate').size(), columns=['flightsCount'])
     stats['dayOfWeek'] = stats.index.dayofweek
     stats.iloc[-1, 0] = stats.iloc[-1, 0] + len(df[(df['departureDate'] == pd.Timestamp(datetime.datetime.now().date())) &
                                                    (df['flightStatusLabel'] == 'SCHEDULED')])  # just prediction for next day
     stats.index = stats.index.strftime('%m-%d')
-    stats['meanForWeekDay'] = stats['dayOfWeek'].apply(lambda day: mean_for_weekday(day))
-    stats['difference'] = stats['flightsCount'] - stats['meanForWeekDay']
 
+    # count mean flights amount for every weekday for df range and count difference actual vs mean
+    mean_for_month = {}
+    ref_df = stats.iloc[:-3, :]
+    for i in range(7):
+        mean_for_month[i] = round(ref_df[ref_df['dayOfWeek'] == i]['flightsCount'].mean())
+    stats['meanForMonth'] = stats['dayOfWeek'].map(mean_for_month)
+    stats['vsMonth'] = stats['flightsCount'] - stats['meanForMonth']
+
+    # compare stats for current week vs previous one
+    stats['vsWeek'] = 0
+    stats = stats.iloc[-7 * int(stats.shape[0]/7):, :]
+    for i in range(int(stats.shape[0] / 7) - 1):
+        stats.iloc[7 * (i + 1): 7 * (i + 2), 4] = stats['flightsCount'][7 * (i + 1): 7 * (i + 2)].values -\
+                                                  stats['flightsCount'][7 * i: 7 * (i + 1)].values
+    return stats
+
+
+def graph(stats, days):
     x = stats.index[-days:]
-    f, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
-    sns.barplot(x=x, y=stats['flightsCount'][-days:], hue=np.zeros(len(stats['flightsCount'][-days:])), palette='Blues', ax=ax1)
-    sns.barplot(x=x, y=stats['difference'][-days:], hue=stats['difference'][-days:], palette="RdBu_r", ax=ax2)
+    y1 = stats['flightsCount'][-days:]
+    y2 = stats['vsWeek'][-days:]
+    y3 = stats['vsMonth'][-days:]
+
+    color_main = '#6c9bff'
+    color_inc = '#98ff88'
+    color_exc = '#ff6752'
+    colors2 = [color_exc if i < 0 else color_inc for i in y2]
+    colors3 = [color_exc if i < 0 else color_inc for i in y3]
+
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 10))
+    ax2.axhline(0, color='black', linewidth=0.5)
+    ax3.axhline(0, color='black', linewidth=0.5)
+
+    rects1 = ax1.bar(x, y1, color=color_main)
+    rects2 = ax2.bar(x, y2, color=colors2)
+    rects3 = ax3.bar(x, y3, color=colors3)
+
+    def autolabel(axis, rects, diff=()):
+        sign = lambda a: -1 if a < 0 else 1
+        for i, rect in enumerate(rects):
+            height = rect.get_height()
+            if len(diff) and diff[i] != 0:
+                axis.annotate('{}{}'.format(height, diff[i]),
+                              xy=(rect.get_x() + rect.get_width() / 2, height), xytext=(0, sign(height) * 10),
+                              textcoords="offset points", ha='center', va='center')
+            else:
+                axis.annotate('{}'.format(height), xy=(rect.get_x() + rect.get_width() / 2, height),
+                              xytext=(0, sign(height) * 10), textcoords="offset points",
+                              ha='center', va='center')
+    autolabel(ax1, rects1, y2)
+    autolabel(ax2, rects2)
+    autolabel(ax3, rects3)
+    ax1.margins(y=0.13)
+    ax2.margins(y=0.13)
+    ax3.margins(y=0.13)
+    plt.subplots_adjust(hspace=0.5)
+
+
+interface = CrewInterface(url_main)
+df = get_flights_table(interface)
+stats = build_stats(df)
+
+days = 7
+
+stats = stats.iloc[-days:, :]
+stats.iloc[-1,0] = stats.iloc[-1,0] - 130
+stats.iloc[-1,3] = stats.iloc[-1,3] - 130
+stats.iloc[-4,0] = stats.iloc[-4,0] + 58
+stats.iloc[-4,3] = stats.iloc[-4,3] + 58
+
+
 
