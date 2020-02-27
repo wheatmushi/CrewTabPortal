@@ -3,15 +3,14 @@
 import sys
 import os
 import datetime
-import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 sys.path.insert(1, os.path.join('..', '_common'))
 from crew_utils import date_iterator
 from CrewInterface import CrewInterface
+import visualization as viz
 
-start_date = (datetime.datetime.now() + datetime.timedelta(days=2)).strftime('%Y-%m-%d')
+start_date_ = (datetime.datetime.now() + datetime.timedelta(days=2)).strftime('%Y-%m-%d')
+start_date = datetime.datetime.now() + datetime.timedelta(days=2)
 num_of_days = 35
 dates_range = list(date_iterator(start_date, -num_of_days))
 path_to_DB = os.path.join('..', '_DB', 'flights', 'flights_DB.csv')
@@ -23,7 +22,7 @@ pd.set_option('display.max_columns', 30)
 
 
 def get_flights_table(interface):  # NEED TO REPLACE for WITH RANGE OF DATES
-    df = interface.get_flights_table(start_date, -3)
+    df = interface.get_flights_table(start_date_, -3)
     if os.path.exists(path_to_DB):
         df_local = pd.read_csv(path_to_DB, index_col=0, parse_dates='departureDate')
         df = pd.concat([df, df_local], axis=0, sort=False)
@@ -65,58 +64,26 @@ def build_stats(df, days=7):
     return stats
 
 
-def graph(stats, days):
-    x = stats.index[-days:]
-    y1 = stats['flightsCount'][-days:]
-    y2 = stats['vsWeek'][-days:]
-    y3 = stats['vsMonth'][-days:]
+def print_missing(df, days=3):
+    missing_flights = pd.DataFrame()
+    for i in range(days):
+        time2 = start_date.replace(hour=0, minute=0, second=0)
+        time_ref2 = time2 - datetime.timedelta(days=7)
+        time1 = time2 - datetime.timedelta(days=1)
+        time_ref1 = time_ref2 - datetime.timedelta(days=7)
+        df_temp = df[(date_now < df[]]
 
-    color_main = '#6c9bff'
-    color_inc = '#98ff88'
-    color_exc = '#ff6752'
-    colors2 = [color_exc if i < 0 else color_inc for i in y2]
-    colors3 = [color_exc if i < 0 else color_inc for i in y3]
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 10))
-    ax2.axhline(0, color='black', linewidth=0.5)
-    ax3.axhline(0, color='black', linewidth=0.5)
 
-    rects1 = ax1.bar(x, y1, color=color_main)
-    rects2 = ax2.bar(x, y2, color=colors2)
-    rects3 = ax3.bar(x, y3, color=colors3)
 
-    def autolabel(axis, rects, diff=()):
-        sign = lambda a: -1 if a < 0 else 1
-        for i, rect in enumerate(rects):
-            height = rect.get_height()
-            if len(diff) and diff[i] != 0:
-                axis.annotate('{}{}'.format(height, diff[i]),
-                              xy=(rect.get_x() + rect.get_width() / 2, height), xytext=(0, sign(height) * 10),
-                              textcoords="offset points", ha='center', va='center')
-            else:
-                axis.annotate('{}'.format(height), xy=(rect.get_x() + rect.get_width() / 2, height),
-                              xytext=(0, sign(height) * 10), textcoords="offset points",
-                              ha='center', va='center')
-    autolabel(ax1, rects1, y2)
-    autolabel(ax2, rects2)
-    autolabel(ax3, rects3)
-    ax1.margins(y=0.13)
-    ax2.margins(y=0.13)
-    ax3.margins(y=0.13)
-    plt.subplots_adjust(hspace=0.5)
+
 
 
 interface = CrewInterface(url_main)
 df = get_flights_table(interface)
 stats = build_stats(df)
+viz.bar_graph(stats)
 
-days = 7
-
-stats = stats.iloc[-days:, :]
-stats.iloc[-1,0] = stats.iloc[-1,0] - 130
-stats.iloc[-1,3] = stats.iloc[-1,3] - 130
-stats.iloc[-4,0] = stats.iloc[-4,0] + 58
-stats.iloc[-4,3] = stats.iloc[-4,3] + 58
 
 
 

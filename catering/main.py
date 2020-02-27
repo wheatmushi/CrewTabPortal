@@ -3,7 +3,6 @@ import os
 import sys
 import CatInterface
 import CatClasses
-from importlib import reload
 
 
 sys.path.insert(1, os.path.join('..', '_common'))
@@ -43,10 +42,6 @@ def create_lineitems():
     interface = CatInterface.CatInterface(url_main, lineitems=True)
     table = CatClasses.LineItemTable(interface)
     table.deploy()
-
-
-CatClasses = reload(CatClasses)
-CatInterface = reload(CatInterface)
 
 
 itf = CatInterface.CatInterface(url_main, lineitems=False)
