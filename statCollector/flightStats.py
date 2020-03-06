@@ -2,17 +2,17 @@
 
 import sys
 import os
-import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 sys.path.insert(1, os.path.join('..', '_common'))
 from crew_utils import date_iterator
 from CrewInterface import CrewInterface
 import visualization as viz
 
-start_date_ = (datetime.datetime.now() + datetime.timedelta(days=2)).strftime('%Y-%m-%d')
-start_date = datetime.datetime.now() + datetime.timedelta(days=2)
+start_date_ = (datetime.now() + timedelta(days=2)).strftime('%Y-%m-%d')
+start_date = datetime.now() + timedelta(days=2)
 num_of_days = 35
-dates_range = list(date_iterator(start_date, -num_of_days))
+dates_range = list(date_iterator(start_date_, -num_of_days))
 path_to_DB = os.path.join('..', '_DB', 'flights', 'flights_DB.csv')
 url_main = 'https://admin-su.crewplatform.aero/'
 filter_numbers = True
@@ -43,7 +43,7 @@ def get_flights_table(interface):  # NEED TO REPLACE for WITH RANGE OF DATES
 def build_stats(df, days=7):
     stats = pd.DataFrame(df.groupby('departureDate').size(), columns=['flightsCount'])
     stats['dayOfWeek'] = stats.index.dayofweek
-    stats.iloc[-1, 0] = stats.iloc[-1, 0] + len(df[(df['departureDate'] == pd.Timestamp(datetime.datetime.now().date())) &
+    stats.iloc[-1, 0] = stats.iloc[-1, 0] + len(df[(df['departureDate'] == pd.Timestamp(datetime.now().date())) &
                                                    (df['flightStatusLabel'] == 'SCHEDULED')])  # just prediction for next day
     stats.index = stats.index.strftime('%m-%d')
 
@@ -51,30 +51,49 @@ def build_stats(df, days=7):
     mean_for_month = {}
     ref_df = stats.iloc[:-3, :]
     for i in range(7):
-        mean_for_month[i] = round(ref_df[ref_df['dayOfWeek'] == i]['flightsCount'].mean())
+        mean_for_month[i] = int(round(ref_df[ref_df['dayOfWeek'] == i]['flightsCount'].mean()))
     stats['meanForMonth'] = stats['dayOfWeek'].map(mean_for_month)
     stats['vsMonth'] = stats['flightsCount'] - stats['meanForMonth']
 
     # compare stats for current week vs previous one
-    stats['vsWeek'] = 0
-    stats = stats.iloc[-7 * int(stats.shape[0]/7):, :]
+    #stats['vsWeek'] = 0
+    stats['vsWeek +'] = 0
+    stats['vsWeek -'] = 0
+    #stats = stats.iloc[-7 * int(stats.shape[0]/7):, :]
+    '''
     for i in range(int(stats.shape[0] / 7) - 1):
         stats.iloc[7 * (i + 1): 7 * (i + 2), 4] = stats['flightsCount'][7 * (i + 1): 7 * (i + 2)].values -\
-                                                  stats['flightsCount'][7 * i: 7 * (i + 1)].values
+                                                  stats['flightsCount'][7 * i: 7 * (i + 1)].value
+    '''
+    for day in range(stats.shape[0]-7):
+        df_excess, df_missing = find_missing(df, day)
+        stats.iloc[day+7, 4] = df_excess.shape[0]
+        stats.iloc[day+7, 5] = df_missing.shape[0]
     return stats
 
 
-def print_missing(df, days=3):
-    missing_flights = pd.DataFrame()
-    for i in range(days):
-        time2 = start_date.replace(hour=0, minute=0, second=0)
-        time_ref2 = time2 - datetime.timedelta(days=7)
-        time1 = time2 - datetime.timedelta(days=1)
-        time_ref1 = time_ref2 - datetime.timedelta(days=7)
-        df_temp = df[(date_now < df[]]
+def find_missing(df, day):
+    t_ref = df['departureDate'].min() + timedelta(days=day)
+    t = t_ref + timedelta(days=7)
 
+    df_new = df[(df['departureDate'].between(t, t))]
+    df_ref = df[df['departureDate'].between(t_ref, t_ref)]
 
+    df_excess = df_new[~df_new['flightNumber'].isin(df_ref['flightNumber'])]
+    df_missing = df_ref[~df_ref['flightNumber'].isin(df_new['flightNumber'])]
+    if t == df['departureDate'].max():
+        scheduled = df[(df['departureDate'] == pd.Timestamp(datetime.now().date())) &
+                       (df['flightStatusLabel'] == 'SCHEDULED')]['flightNumber']
+        df_missing = df_missing[~df_missing['flightNumber'].isin(scheduled)]
+    return df_excess, df_missing
 
+'''
+ref = df_ref['flightNumber']
+new = df_new['flightNumber']
+ref = set(ref.values)
+new = set(new.values)
+new.difference(ref)
+'''
 
 
 

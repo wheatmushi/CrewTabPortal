@@ -3,29 +3,30 @@ from matplotlib import pyplot as plt
 
 def bar_graph(stats, days=7):
     x = stats.index[-days:]
-    y1 = stats['flightsCount'][-days:]
-    y2 = stats['vsWeek'][-days:]
-    y3 = stats['vsMonth'][-days:]
+    y_count = stats['flightsCount'][-days:]
+    y_week_excess = stats['vsWeek +'][-days:]
+    y_week_missing = stats['vsWeek -'][-days:]
+    y_month = stats['vsMonth'][-days:]
 
     color_main = '#6c9bff'
-    color_inc = '#98ff88'
-    color_exc = '#ff6752'
-    colors2 = [color_exc if i < 0 else color_inc for i in y2]
-    colors3 = [color_exc if i < 0 else color_inc for i in y3]
+    color_excess = '#98ff88'
+    color_missing = '#ff6752'
+    colors_month = [color_missing if i < 0 else color_excess for i in y_month]
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(days, 10))
-    ax2.axhline(0, color='black', linewidth=0.5)
-    ax3.axhline(0, color='black', linewidth=0.5)
+    fig, (ax_count, ax_week, ax_month) = plt.subplots(3, 1, figsize=(days, 10))
+    ax_week.axhline(0, color='black', linewidth=0.5)
+    ax_month.axhline(0, color='black', linewidth=0.5)
 
-    rects1 = ax1.bar(x, y1, color=color_main)
-    rects2 = ax2.bar(x, y2, color=colors2)
-    rects3 = ax3.bar(x, y3, color=colors3)
+    rects_count = ax_count.bar(x, y_count, color=color_main)
+    rects_week_excess = ax_week.bar(x, y_week_excess, color=color_excess)
+    rects_week_missing = ax_week.bar(x, -y_week_missing, color=color_missing)
+    rects_month = ax_month.bar(x, y_month, color=colors_month)
 
     def autolabel(axis, rects, diff=()):
         sign = lambda a: -1 if a < 0 else 1
         for i, rect in enumerate(rects):
             height = rect.get_height()
-            if len(diff) and diff[i] != 0:
+            if len(diff) and diff[i] != 0:  # additional text for amount difference
                 axis.annotate('{} ({})'.format(height, diff[i]),
                               xy=(rect.get_x() + rect.get_width() / 2, height), xytext=(0, sign(height) * 10),
                               textcoords="offset points", ha='center', va='center')
@@ -33,13 +34,14 @@ def bar_graph(stats, days=7):
                 axis.annotate('{}'.format(height), xy=(rect.get_x() + rect.get_width() / 2, height),
                               xytext=(0, sign(height) * 10), textcoords="offset points",
                               ha='center', va='center')
-    autolabel(ax1, rects1, y2)
-    autolabel(ax2, rects2)
-    autolabel(ax3, rects3)
-    ax1.margins(y=0.15)
-    ax2.margins(y=0.15)
-    ax3.margins(y=0.15)
+    autolabel(ax_count, rects_count, y_week_excess-y_week_missing)
+    autolabel(ax_week, rects_week_excess)
+    autolabel(ax_week, rects_week_missing)
+    autolabel(ax_month, rects_month)
+    ax_count.margins(y=0.15)
+    ax_week.margins(y=0.15)
+    ax_month.margins(y=0.15)
     plt.subplots_adjust(hspace=0.5)
-    ax1.set_title('amount of flights')
-    ax2.set_title('compared to last week')
-    ax3.set_title('compared to mean for last month')
+    ax_count.set_title('amount of flights')
+    ax_week.set_title('compared to last week')
+    ax_month.set_title('compared to mean for last month')
