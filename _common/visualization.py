@@ -41,7 +41,7 @@ def bar_graph(stats, days=7):
     ax_count.margins(y=0.15)
     ax_week.margins(y=0.15)
     ax_month.margins(y=0.15)
-    plt.subplots_adjust(hspace=0.5)
+    plt.subplots_adjust(hspace=0.2)
     ax_count.set_title('amount of flights')
     ax_week.set_title('compared to last week')
     ax_month.set_title('compared to mean for last month')

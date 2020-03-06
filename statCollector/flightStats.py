@@ -9,6 +9,10 @@ from crew_utils import date_iterator
 from CrewInterface import CrewInterface
 import visualization as viz
 
+pd.set_option('display.width', 320)
+pd.set_option('display.max_columns', 30)
+pd.set_option('mode.chained_assignment', None)
+
 start_date_ = (datetime.now() + timedelta(days=2)).strftime('%Y-%m-%d')
 start_date = datetime.now() + timedelta(days=2)
 num_of_days = 35
@@ -16,9 +20,6 @@ dates_range = list(date_iterator(start_date_, -num_of_days))
 path_to_DB = os.path.join('..', '_DB', 'flights', 'flights_DB.csv')
 url_main = 'https://admin-su.crewplatform.aero/'
 filter_numbers = True
-
-pd.set_option('display.width', 320)
-pd.set_option('display.max_columns', 30)
 
 
 def get_flights_table(interface):  # NEED TO REPLACE for WITH RANGE OF DATES
@@ -40,7 +41,8 @@ def get_flights_table(interface):  # NEED TO REPLACE for WITH RANGE OF DATES
     return df
 
 
-def build_stats(df, days=7):
+def build_stats(df, days=7):  # build stats for flights compared to month mean and last week amount, return stats DF and
+    # df_to_check with excess and missing flights
     stats = pd.DataFrame(df.groupby('departureDate').size(), columns=['flightsCount'])
     stats['dayOfWeek'] = stats.index.dayofweek
     stats.iloc[-1, 0] = stats.iloc[-1, 0] + len(df[(df['departureDate'] == pd.Timestamp(datetime.now().date())) &
@@ -56,23 +58,18 @@ def build_stats(df, days=7):
     stats['vsMonth'] = stats['flightsCount'] - stats['meanForMonth']
 
     # compare stats for current week vs previous one
-    #stats['vsWeek'] = 0
     stats['vsWeek +'] = 0
     stats['vsWeek -'] = 0
-    #stats = stats.iloc[-7 * int(stats.shape[0]/7):, :]
-    '''
-    for i in range(int(stats.shape[0] / 7) - 1):
-        stats.iloc[7 * (i + 1): 7 * (i + 2), 4] = stats['flightsCount'][7 * (i + 1): 7 * (i + 2)].values -\
-                                                  stats['flightsCount'][7 * i: 7 * (i + 1)].value
-    '''
+    df_to_check = pd.DataFrame()
     for day in range(stats.shape[0]-7):
         df_excess, df_missing = find_missing(df, day)
         stats.iloc[day+7, 4] = df_excess.shape[0]
         stats.iloc[day+7, 5] = df_missing.shape[0]
-    return stats
+        df_to_check = pd.concat([df_to_check, df_excess, df_missing], axis=0)
+    return stats, df_to_check
 
 
-def find_missing(df, day):
+def find_missing(df, day):  # find excess and missing flights for given day and return 2 dataframes
     t_ref = df['departureDate'].min() + timedelta(days=day)
     t = t_ref + timedelta(days=7)
 
@@ -85,23 +82,29 @@ def find_missing(df, day):
         scheduled = df[(df['departureDate'] == pd.Timestamp(datetime.now().date())) &
                        (df['flightStatusLabel'] == 'SCHEDULED')]['flightNumber']
         df_missing = df_missing[~df_missing['flightNumber'].isin(scheduled)]
+    df_missing['status'] = 'missing'
+    df_excess['status'] = 'excess'
+    df_missing['departureDate'] = t
     return df_excess, df_missing
 
-'''
-ref = df_ref['flightNumber']
-new = df_new['flightNumber']
-ref = set(ref.values)
-new = set(new.values)
-new.difference(ref)
-'''
 
-
+def print_missing(df_to_check, days):  # write missing/excess flights to .csv and print flights for last few days
+    df_to_check = df_to_check.sort_values('departureDate', ascending=False)
+    df_to_check.to_csv('missing_flights_{}.csv'.format(df_to_check['departureDate'].max().strftime('%Y-%m-%d')))
+    days = sorted(list(set(df_to_check['departureDate'].values)), reverse=True)[:days]
+    for i in days:
+        print(i.astype('datetime64[D]'))
+        df_excess = df_to_check[(df_to_check['status'] == 'excess') & (df_to_check['departureDate'] == i)]
+        df_missing = df_to_check[(df_to_check['status'] == 'missing') & (df_to_check['departureDate'] == i)]
+        print('Excess flights:', list(df_excess['flightNumber'].values))
+        print('Missing flights:', list(df_missing['flightNumber'].values), '\n')
 
 
 interface = CrewInterface(url_main)
 df = get_flights_table(interface)
-stats = build_stats(df)
+stats, df_to_check = build_stats(df)
 viz.bar_graph(stats)
+print_missing(df_to_check, 3)
 
 
 
