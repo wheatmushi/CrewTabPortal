@@ -111,6 +111,8 @@ class CrewInterface:
         # load crew reports records, all parameters in url_params dict (start/end dates, form id, staff id, flight num,
         # tail number, dep/arr airport, length of list
         print('parsing reports table...')
+        if type(start_date) is datetime:
+            start_date = start_date.strftime('%Y-%m-%d')
         if 'admin-fv' in self.url_main:
             url = URLs.URL_monitor_reports_FV
         if 'admin-su' in self.url_main:
