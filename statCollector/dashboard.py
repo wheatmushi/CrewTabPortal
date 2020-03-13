@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta
 import flightStats
-import reportStats
+# import reportStats
 sys.path.insert(1, os.path.join('..', '_common'))
 from CrewInterface import CrewInterface
 import visualization
@@ -23,7 +23,7 @@ filter_numbers = True
 
 
 interface = CrewInterface(url_main)
-df = flightStats.get_flights_table(interface, start_date, num_of_days, path_to_DB, filter_numbers)
-stats, df_to_check = flightStats.build_stats(df)
-visualization.bar_graph(stats)
-flightStats.print_missing(df_to_check, 3)
+df_flights = flightStats.get_flights_table(interface, start_date, num_of_days, path_to_DB, filter_numbers)
+stats_flights, df_to_check_flights = flightStats.build_stats(df_flights)
+visualization.bar_graph(stats_flights)
+flightStats.print_missing(df_to_check_flights, 3)
