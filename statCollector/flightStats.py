@@ -30,11 +30,11 @@ def get_flights_table(interface, start_date, num_of_days, path_to_DB, filter_num
 
 def build_stats(df):  # build stats for flights compared to month mean and last week amount, return stats DF and
     # df_to_check with excess and missing flights
+    df = df[df['flightStatusLabel'] != 'CANCELED']
     stats = pd.DataFrame(df.groupby('departureDate').size(), columns=['flightsCount'])
     stats['dayOfWeek'] = stats.index.dayofweek
     stats.iloc[-1, 0] = stats.iloc[-1, 0] + len(df[(df['departureDate'] == pd.Timestamp(datetime.now().date())) &
-                                                   (df['flightStatusLabel'] == 'SCHEDULED')])  # just prediction for next day
-    stats.index = stats.index.strftime('%m-%d')
+                                                   (df['flightStatusLabel'] == 'SCHEDULED')]) - 20  # just prediction for next day
 
     # count mean flights amount for every weekday for df range and count difference actual vs mean
     mean_for_month = {}
@@ -51,8 +51,9 @@ def build_stats(df):  # build stats for flights compared to month mean and last 
     for day in range(stats.shape[0]-7):
         df_excess, df_missing = find_missing(df, day)
         stats.iloc[day+7, 4] = df_excess.shape[0]
-        stats.iloc[day+7, 5] = df_missing.shape[0]
+        stats.iloc[day+7, 5] = -df_missing.shape[0]
         df_to_check = pd.concat([df_to_check, df_excess, df_missing], axis=0)
+    stats.index = stats.index.strftime('%m-%d')
     return stats, df_to_check
 
 

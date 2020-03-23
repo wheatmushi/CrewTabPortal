@@ -30,12 +30,13 @@ class SessionCrewTabPortal(requests.Session):  # set timeout=10s and 5 retries b
             return soup.find('input', {'name': '_csrf'}).get('value')
         return req
 
-    def authentication(self):
-        with open('/Volumes/zip/credentials.pkl', 'rb') as inp:
-            credentials = pickle.load(inp)
-        destination = self.url_main.replace('https://', '').replace('http://', '').replace('/', '')
-        login = credentials[destination]['login']
-        password = credentials[destination]['password']
+    def authentication(self, login=None, password=None):
+        if not login and not password:
+            with open('/Volumes/zip/credentials.pkl', 'rb') as inp:
+                credentials = pickle.load(inp)
+            destination = self.url_main.replace('https://', '').replace('http://', '').replace('/', '')
+            login = credentials[destination]['login']
+            password = credentials[destination]['password']
         print('\nopening session...')
 
         if not re.match('[^@]+@[^@]+\.[^@]+', login):

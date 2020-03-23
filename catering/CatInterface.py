@@ -11,10 +11,10 @@ import auth
 
 
 class CatInterface:
-    def __init__(self, url_main, lineitems=False):
+    def __init__(self, url_main, lineitems=False, login=None, password=None):
         self.url_main = url_main
         self.session = auth.SessionCrewTabPortal(url_main)
-        self.session.authentication()
+        self.session.authentication(login, password)
         if lineitems:
             self.default_cats = self.get_default_cats()
 

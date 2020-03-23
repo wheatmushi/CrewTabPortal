@@ -10,10 +10,10 @@ import crew_utils
 
 
 class CrewInterface:
-    def __init__(self, url_main):
+    def __init__(self, url_main, login=None, password=None):
         self.url_main = url_main
         self.session = auth.SessionCrewTabPortal(url_main)
-        self.session.authentication()
+        self.session.authentication(login, password)
 
     def get_flight_info(self, flight_id, all_info=False):
         # get flight information about times of dep/arr and booked/checked in/boarded passengers
