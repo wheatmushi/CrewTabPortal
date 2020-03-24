@@ -40,7 +40,8 @@ def build_stats(df_reports, df_flights=None):
             reports_for_d = df_reports[df_reports['departureDate'] == d]['flightNumber']
             flights_for_d = df_flights[(df_flights['departureDate'] == d) &
                                        (df_flights['flightStatusLabel'] != 'CANCELED')]['flightNumber']
-            flights_vs_reports[d] = len(set(flights_for_d.values).difference(reports_for_d.values))
+            # flights_vs_reports[d] = len(set(flights_for_d.values).difference(reports_for_d.values))
+            flights_vs_reports[d] = len(flights_for_d) - len(reports_for_d)
         stats['vsFlights'] = -stats.index.to_series().map(flights_vs_reports)
 
     stats.index = [i.strftime('%m-%d') for i in stats.index.values]
