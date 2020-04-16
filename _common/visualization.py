@@ -35,7 +35,7 @@ def draw_bars(ax, df, columns, depth, title, graph_type='regular', add_lables=np
     y = []
     colors = []
 
-    x = df.index[-depth:]
+    x = df['date'][-depth:]
     for i in range(columns_amount):
         y.append(df[columns[i]][-depth:])
 
@@ -55,11 +55,11 @@ def draw_bars(ax, df, columns, depth, title, graph_type='regular', add_lables=np
     ax.set_title(title)
 
 
-def draw_bars_double(ax, y, depth, title, shift=0, add_lables=()):
+def draw_bars_double(ax, x, y, depth, title, shift=0, add_lables=()):
     color_0 = '#80a8ff'
     color_1 = '#b3cbff'
 
-    x_labels = y[0].index[-depth:]
+    x_labels = x[-depth:]
     x = np.arange(len(x_labels))
     y[0] = y[0][-depth:]
     y[1] = np.append(y[1][-depth+shift:], np.zeros(shift, dtype='int'))
@@ -83,17 +83,17 @@ def draw_bars_double(ax, y, depth, title, shift=0, add_lables=()):
     ax.set_title(title)
 
 
-def draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour, depth=7, save=False):
-    #fig2, axis2 = plt.subplots(3, 2, figsize=(depth * 2, 10))
-    fig = plt.figure(figsize=(14, 10))
+def draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour, depth=9, save=False):
+    fig = plt.figure(figsize=(20, 10))
     grid = gridspec.GridSpec(ncols=2, nrows=3, figure=fig)
     ax_top = fig.add_subplot(grid[0, :])
     axis = [fig.add_subplot(grid[i, j:j + 1]) for i in range(1, 3) for j in range(2)]
 
     draw_bars_double(ax=ax_top,  # pared flights and reports amount
+                     x=stats_flights['date'],
                      y=[stats_flights['flightsCount'], stats_reports_for_hour['byDepartureDate']],
                      depth=depth,
-                     title='flights (vs previous week) and reports (vs yesterday) amount',
+                     title='amount of flights (vs previous week) and purser reports (vs yesterday)',
                      shift=2,
                      add_lables=[stats_flights['vsWeek +'] + stats_flights['vsWeek -'],
                                  stats_reports_for_hour['vsYesterday'].values])
@@ -117,7 +117,7 @@ def draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour, depth=7
               df=stats_reports_for_hour,
               columns=['vsMonth %'],
               depth=depth,
-              title='difference of reports amount posted to mean for last month',
+              title='reports amount compared to mean for last month, %',
               graph_type='difference')
 
     draw_bars(ax=axis[3],  #

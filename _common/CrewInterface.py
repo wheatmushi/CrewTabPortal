@@ -107,7 +107,7 @@ class CrewInterface:
         print('syncs parsing time {} seconds'.format(round(time() - t)))
         return syncs
 
-    def get_reports_table(self, start_date, num_of_days, url_params):
+    def get_reports_table(self, start_date, num_of_days, url_params='purser'):
         # load crew reports records, all parameters in url_params dict (start/end dates, form id, staff id, flight num,
         # tail number, dep/arr airport, length of list
         print('parsing reports table...')
@@ -117,6 +117,15 @@ class CrewInterface:
             url = URLs.URL_monitor_reports_FV
         if 'admin-su' in self.url_main:
             url = URLs.URL_monitor_reports_SU
+        
+        if url_params == 'pureser':
+            url_params = {"form_id": '51',
+                          "staff_id": '',
+                          "flight_number": '',
+                          "dep_airport": '',
+                          "arr_airport": '',
+                          "reg_number": ''}
+        
         url_params['length'] = 10000
         reports_table = []
         dates_range = crew_utils.date_iterator(start_date, num_of_days)
