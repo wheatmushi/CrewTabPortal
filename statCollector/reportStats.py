@@ -4,7 +4,17 @@ import sys
 import os
 import numpy as np
 import pandas as pd
+from datetime import datetime
 sys.path.insert(1, os.path.join('..', '_common'))
+
+
+def update_reports(interface, old_reports):
+    start_date = datetime.now()
+    num_of_days = 3
+    new_reports = interface.get_reports_table(interface, start_date, -num_of_days)
+    df_reports = pd.concat([old_reports, new_reports], axis=0, sort=False)
+    df_reports = df_reports.drop_duplicates(['flightsNumber', 'departureDate'], keep='last')
+    return df_reports
 
 
 def build_stats(df_reports, df_flights=None):
@@ -44,7 +54,7 @@ def build_stats(df_reports, df_flights=None):
             flights_vs_reports[d] = len(flights_for_d) - len(reports_for_d)
         stats['vsFlights'] = -stats.index.to_series().map(flights_vs_reports)
 
-    stats.index = [i.strftime('%m-%d') for i in stats.index.values]
+    stats['date'] = [i.strftime('%m-%d') for i in stats.index.values]
     stats[['reportsCount', 'vsMonth', 'vsYesterday', 'byDepartureDate']] =\
         stats[['reportsCount', 'vsMonth', 'vsYesterday', 'byDepartureDate']].fillna(0)
     stats[['reportsCount', 'vsMonth', 'vsYesterday', 'byDepartureDate']] =\

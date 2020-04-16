@@ -8,12 +8,8 @@ sys.path.insert(1, os.path.join('..', '_common'))
 from crew_utils import date_iterator
 
 
-def get_flights_table(interface, start_date, num_of_days, path_to_DB, filter_numbers):  # NEED TO REPLACE for WITH RANGE OF DATES
+def get_flights_table(interface, start_date, num_of_days, filter_numbers=True):
     df = interface.get_flights_table(start_date, -3)
-    if os.path.exists(path_to_DB):
-        df_local = pd.read_csv(path_to_DB, index_col=0, parse_dates='departureDate')
-        df = pd.concat([df, df_local], axis=0, sort=False)
-
     dates_in_df = set([d.strftime('%Y-%m-%d') for d in list(set(df['departureDate']))])
     dates_range = list(date_iterator(start_date, -num_of_days))
     dfs_to_add = []
@@ -53,8 +49,17 @@ def build_stats(df):  # build stats for flights compared to month mean and last 
         stats.iloc[day+7, 4] = df_excess.shape[0]
         stats.iloc[day+7, 5] = -df_missing.shape[0]
         df_to_check = pd.concat([df_to_check, df_excess, df_missing], axis=0)
-    stats.index = stats.index.strftime('%m-%d')
+    stats['date'] = stats.index.strftime('%m-%d')
     return stats, df_to_check
+
+
+def update_flights(interface, old_flights):
+    start_date = datetime.now() + timedelta(days=2)
+    num_of_days = 3
+    new_flights = get_flights_table(interface, start_date, num_of_days, filter_numbers=True)
+    df_flights = pd.concat([old_flights, new_flights], axis=0, sort=False)
+    df_flights = df_flights.drop_duplicates(['flightsNumber', 'departureDate'], keep='last')
+    return df_flights
 
 
 def find_missing(df, day):  # find excess and missing flights for given day and return 2 dataframes

@@ -11,7 +11,7 @@ url_main = 'https://admin-su-qa.crewplatform.aero/'
 
 
 routes_table_path = ''
-nonbase_menus_path = '/Volumes/data/catering menu/внебазовые меню/CSVs_to_load'
+nonbase_menus_path = '/Volumes/data/wrk/catering menu/внебазовые меню/CSVs_to_load'
 
 
 def create_non_base_menus():
