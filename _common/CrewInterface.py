@@ -118,7 +118,7 @@ class CrewInterface:
         if 'admin-su' in self.url_main:
             url = URLs.URL_monitor_reports_SU
         
-        if url_params == 'pureser':
+        if url_params == 'purser':
             url_params = {"form_id": '51',
                           "staff_id": '',
                           "flight_number": '',
@@ -141,4 +141,5 @@ class CrewInterface:
                                axis=1, errors='ignore')
         reports_table['lastUpdate'] = reports_table['lastUpdate'].astype('datetime64')
         reports_table['departureDate'] = reports_table['departureDate'].astype('datetime64')
+        reports_table['lastUpdateEnd'] = reports_table['lastUpdateEnd'].astype('datetime64')
         return reports_table

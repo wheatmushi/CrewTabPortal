@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
 import numpy as np
+from datetime import datetime
 
 
 def autolabel(axis, rects, diff=np.empty(0), shift=0):
@@ -84,7 +85,7 @@ def draw_bars_double(ax, x, y, depth, title, shift=0, add_lables=()):
 
 
 def draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour, depth=9, save=False):
-    fig = plt.figure(figsize=(20, 10))
+    fig = plt.figure(figsize=(20, 8))
     grid = gridspec.GridSpec(ncols=2, nrows=3, figure=fig)
     ax_top = fig.add_subplot(grid[0, :])
     axis = [fig.add_subplot(grid[i, j:j + 1]) for i in range(1, 3) for j in range(2)]
@@ -132,6 +133,9 @@ def draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour, depth=9
         ax.margins(y=0.15)
     plt.subplots_adjust(hspace=0.3)
     fig.tight_layout()
+    time = datetime.now().strftime('%D %H:%M')
+    fig.text(0.99, 0.99, 'last data check ' + time, horizontalalignment='right', verticalalignment='top')
     if save:
         plt.savefig('dash_{}_days.svg'.format(depth))
+        plt.close(fig)
 

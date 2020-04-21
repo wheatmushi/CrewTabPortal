@@ -11,9 +11,15 @@ sys.path.insert(1, os.path.join('..', '_common'))
 def update_reports(interface, old_reports):
     start_date = datetime.now()
     num_of_days = 3
-    new_reports = interface.get_reports_table(interface, start_date, -num_of_days)
+    new_reports = interface.get_reports_table(start_date, -num_of_days)
+    old_reports['departureDate'] = old_reports['departureDate'].astype('datetime64')
+    old_reports['lastUpdate'] = old_reports['lastUpdate'].astype('datetime64')
+    old_reports['lastUpdateEnd'] = old_reports['lastUpdateEnd'].astype('datetime64')
     df_reports = pd.concat([old_reports, new_reports], axis=0, sort=False)
-    df_reports = df_reports.drop_duplicates(['flightsNumber', 'departureDate'], keep='last')
+    dates = df_reports['departureDate'].drop_duplicates()
+    dates = dates.sort_values(ascending=False)[:36]
+    df_reports = df_reports[df_reports['departureDate'].isin(dates)]
+    df_reports = df_reports.drop_duplicates(['flightNumber', 'departureDate', 'departureAirport'], keep='last')
     return df_reports
 
 

@@ -57,8 +57,12 @@ def update_flights(interface, old_flights):
     start_date = datetime.now() + timedelta(days=2)
     num_of_days = 3
     new_flights = get_flights_table(interface, start_date, num_of_days, filter_numbers=True)
+    old_flights['departureDate'] = old_flights['departureDate'].astype('datetime64')
     df_flights = pd.concat([old_flights, new_flights], axis=0, sort=False)
-    df_flights = df_flights.drop_duplicates(['flightsNumber', 'departureDate'], keep='last')
+    dates = df_flights['departureDate'].drop_duplicates()
+    dates = dates.sort_values(ascending=False)[:38]
+    df_flights = df_flights[df_flights['departureDate'].isin(dates)]
+    df_flights = df_flights.drop_duplicates(['flightNumber', 'departureDate', 'departureAirport'], keep='last')
     return df_flights
 
 
