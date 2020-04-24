@@ -61,8 +61,8 @@ def build_stats(df_reports, df_flights=None):
         stats['vsFlights'] = -stats.index.to_series().map(flights_vs_reports)
 
     stats['date'] = [i.strftime('%m-%d') for i in stats.index.values]
-    stats[['reportsCount', 'vsMonth', 'vsYesterday', 'byDepartureDate']] =\
-        stats[['reportsCount', 'vsMonth', 'vsYesterday', 'byDepartureDate']].fillna(0)
-    stats[['reportsCount', 'vsMonth', 'vsYesterday', 'byDepartureDate']] =\
-        stats[['reportsCount', 'vsMonth', 'vsYesterday', 'byDepartureDate']].astype('int')
+    stats[['reportsCount', 'byDepartureDate', 'vsMonth', 'vsYesterday', 'vsMonth %', 'vsYesterday %', 'vsFlights']] =\
+        stats[['reportsCount', 'byDepartureDate', 'vsMonth', 'vsYesterday', 'vsMonth %', 'vsYesterday %', 'vsFlights']].fillna(0)
+    stats[['reportsCount', 'byDepartureDate', 'vsMonth', 'vsYesterday', 'vsMonth %', 'vsYesterday %', 'vsFlights']] =\
+        stats[['reportsCount', 'byDepartureDate', 'vsMonth', 'vsYesterday', 'vsMonth %', 'vsYesterday %', 'vsFlights']].astype('int')
     return stats

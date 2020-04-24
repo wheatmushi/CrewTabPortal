@@ -11,17 +11,17 @@ def autolabel(axis, rects, diff=np.empty(0), shift=0):
         height_print = height if height != 0 else ''
         if diff.any():
             diff_print = ' ({})'.format(diff[i]) if diff[i] != 0 else ''
-            fs = 9
+            fontsize = 8
         else:
             diff_print = ''
-            fs = 10
+            fontsize = 9
         axis.annotate('{}{}'.format(height_print, diff_print),
                       xy=(rect.get_x() + rect.get_width() / 2, height),
                       xytext=(shift*3, sign(height) * 10),
                       textcoords="offset points",
                       ha='center',
                       va='center',
-                      fontsize=fs)
+                      fontsize=fontsize)
 
 
 def draw_bars(ax, df, columns, depth, title, graph_type='regular', add_lables=np.empty(0)):
@@ -76,7 +76,7 @@ def draw_bars_double(ax, x, y, depth, title, shift=0, add_lables=()):
 
     additional_lables0 = add_lables[0][-depth:]
     additional_lables1 = np.append(add_lables[1][-depth+shift:], np.zeros(shift, dtype='int'))
-    if depth < 10:
+    if depth < 15:
         autolabel(ax, rects0, additional_lables0, shift=-shift)
         autolabel(ax, rects1, additional_lables1, shift=shift)
 
@@ -85,7 +85,8 @@ def draw_bars_double(ax, x, y, depth, title, shift=0, add_lables=()):
 
 
 def draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour, depth=9, save=False):
-    fig = plt.figure(figsize=(20, 8))
+    print('drawing graphs...')
+    fig = plt.figure(figsize=(20, 9))
     grid = gridspec.GridSpec(ncols=2, nrows=3, figure=fig)
     ax_top = fig.add_subplot(grid[0, :])
     axis = [fig.add_subplot(grid[i, j:j + 1]) for i in range(1, 3) for j in range(2)]
@@ -136,6 +137,6 @@ def draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour, depth=9
     time = datetime.now().strftime('%D %H:%M')
     fig.text(0.99, 0.99, 'last data check ' + time, horizontalalignment='right', verticalalignment='top')
     if save:
-        plt.savefig('dash_{}_days.svg'.format(depth))
+        plt.savefig('../_DB/stat_img/dash_{}_days.svg'.format(depth))
         plt.close(fig)
 

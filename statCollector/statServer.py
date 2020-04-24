@@ -5,8 +5,11 @@ from datetime import datetime, timedelta
 from DBInterface import DBInterface
 from CrewInterface import CrewInterface
 import visualization
+import pandas as pd
 
-
+pd.set_option('display.width', 320)
+pd.set_option('display.max_columns', 30)
+pd.set_option('mode.chained_assignment', None)
 
 url_main = 'https://admin-su.crewplatform.aero/'
 DB = DBInterface()
@@ -29,15 +32,16 @@ while True:
     else:
         df_reports = interface.get_reports_table(start_date, -36)
 
-    DB.write_table('flights', df_flights)
-    DB.write_table('reports', df_reports)
-
     stats_flights, df_to_check_flights = flightStats.build_stats(df_flights)
     stats_reports = reportStats.build_stats(df_reports, df_flights)
     stats_reports_for_hour = stats_reports[stats_reports['hour'] == stats_reports['hour'].values[-1]]
 
+    DB.write_table('flights', df_flights)
+    DB.write_table('reports', df_reports)
+    DB.write_table('missing_flights', df_to_check_flights)
+
     for depth in (7, 9, 14, 21, 30):
         visualization.draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour,
                                      depth=depth, save=True)
-
+    interface.close()
     time.sleep(600)

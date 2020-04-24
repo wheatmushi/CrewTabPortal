@@ -3,13 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <title>statsCollector</title>
+
+    <style>
+        input[type=button] {
+            width: 15em;  height: 2em;
+            font-weight:bold;
+            font-size: 0.8em;
+            float: right;
+
+
+
+    </style>
 </head>
 <body>
-<br><br>
 <center><b><font size="5">Stats for SU services</font></b></center>
-<br><br>
-
-<label for="days_range"><font size="3">Displaying range of days:</font></label>
+<br>
+<b><label for="days_range"><font size="3">Displaying range of days:</font></label></b>
 
 <select id="days_range" onchange="replaceImg()">
   <option value="7">7</option>
@@ -19,11 +28,15 @@
   <option value="30">30</option>
 </select>
 
+
+<input type="button" value="Stats description">
+<input type="button" value="List of missing flights">
+
 <br>
 
 <div id="img_div">
     <p class="stat_img">
-        <img src="dash_9_days.svg" id="stat_img">
+        <img src="../stat_img/dash_9_days.svg" id="stat_img">
     </p>
 </div>
 
@@ -31,11 +44,9 @@
 <script>
 function replaceImg() {
   var image = document.getElementById("stat_img");
-
-
-  var range_elem = document.getElementById("days_range");
+  const range_elem = document.getElementById("days_range");
   const range = range_elem.options[range_elem.selectedIndex].value;
-  image.src = "dash_{range}_days.svg".replace("{range}", range)
+  image.src = "../stat_img/dash_{range}_days.svg".replace("{range}", range)
 }
 </script>
 

@@ -83,6 +83,7 @@ class CrewInterface:
         return crews
 
     def close(self):
+        print('closing CrewInterface session...')
         self.session.close()
 
     def get_syncs(self, departure_dates=('',), staff_id='', flight_number='', departure_airports=('',), length=20000):
