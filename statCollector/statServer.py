@@ -36,6 +36,12 @@ while True:
     stats_reports = reportStats.build_stats(df_reports, df_flights)
     stats_reports_for_hour = stats_reports[stats_reports['hour'] == stats_reports['hour'].values[-1]]
 
+    with open('../_DB/html_templates/dashboard_template.html', 'r') as source,\
+            open('../_DB/html_templates/dashboard.html', 'w') as destination:
+        page = source.read()
+        page = page.replace('data_check_date', datetime.now().strftime('%D %H:%M'))
+        destination.write(page)
+
     DB.write_table('flights', df_flights)
     DB.write_table('reports', df_reports)
     DB.write_table('missing_flights', df_to_check_flights)
