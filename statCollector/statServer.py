@@ -41,7 +41,6 @@ while True:
     DB.write_table('missing_flights', df_to_check_flights)
 
     for depth in (7, 9, 14, 21, 30):
-        visualization.draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour,
-                                     depth=depth, save=True)
+        visualization.plot_dashboard_imgs(stats_flights, stats_reports_for_hour, depth=depth)
     interface.close()
     time.sleep(600)
