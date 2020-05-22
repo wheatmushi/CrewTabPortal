@@ -8,7 +8,7 @@ sys.path.insert(1, os.path.join('..', '_common'))
 from crew_utils import date_iterator
 
 
-def get_flights_table(interface, start_date, num_of_days, filter_numbers=True):
+def get_flights_table(interface, start_date, num_of_days, filter_numbers=None):
     df = interface.get_flights_table(start_date, -3)
     dates_in_df = set([d.strftime('%Y-%m-%d') for d in list(set(df['departureDate']))])
     dates_range = list(date_iterator(start_date, -num_of_days))
@@ -18,9 +18,10 @@ def get_flights_table(interface, start_date, num_of_days, filter_numbers=True):
     df = pd.concat([df] + dfs_to_add, axis=0, sort=False)
     df = df.drop_duplicates()
     df['dayOfWeek'] = df['departureDate'].dt.dayofweek
+    df['departureDate'] = df['departureDate'].astype('datetime64')
     df['flightNumber'] = df['flightNumber'].astype('int')
     if filter_numbers:
-        df = df[df['flightNumber'] < 3000]
+        df = df[df['flightNumber'] < filter_numbers]
     return df
 
 
@@ -48,6 +49,8 @@ def build_stats(df):  # build stats for flights compared to month mean and last 
         df_excess, df_missing = find_missing(df, day)
         stats.iloc[day+7, 4] = df_excess.shape[0]
         stats.iloc[day+7, 5] = -df_missing.shape[0]
+        df_excess['departureDate'] = df_excess['departureDate'].dt.date
+        df_missing['departureDate'] = df_missing['departureDate'].dt.date
         df_to_check = pd.concat([df_to_check, df_excess, df_missing], axis=0)
     stats['date'] = stats.index.strftime('%m-%d')
     return stats, df_to_check

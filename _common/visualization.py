@@ -89,7 +89,7 @@ def plot_bars(df, columns, depth, title, graph_type='regular', add_lables=np.emp
     plt.margins(y=0.15)
     plt.tight_layout()
     if save:
-        plt.savefig('../_DB/stat_img/{}_{}_days.svg'.format(filename, depth))
+        plt.savefig('../_DB/stat_imgs/{}_{}_days.svg'.format(filename, '0' * (2-len(str(depth))) + str(depth)))
         plt.close()
 
 
@@ -150,7 +150,7 @@ def plot_bars_double(x, y, depth, title, shift=0, add_lables=(), figsize=(20, 3)
     plt.margins(y=0.15)
     plt.tight_layout()
     if save:
-        plt.savefig('../_DB/stat_img/{}_{}_days.svg'.format(filename, depth))
+        plt.savefig('../_DB/stat_imgs/{}_{}_days.svg'.format(filename, '0' * (2-len(str(depth))) + str(depth)))
         plt.close()
 
 
@@ -207,11 +207,12 @@ def draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour, depth=9
     time = datetime.now().strftime('%D %H:%M')
     fig.text(0.99, 0.99, 'last data check ' + time, horizontalalignment='right', verticalalignment='top')
     if save:
-        plt.savefig('../_DB/stat_img/dash_{}_days.svg'.format(depth))
+        plt.savefig('../_DB/stat_imgs/dash_{}_days.svg'.format(depth))
         plt.close(fig)
 
 
 def plot_dashboard_imgs(stats_flights, stats_reports_for_hour, depth):
+    print('drawing graphs...')
     plot_bars_double(x=stats_flights['date'],  # pared flights and reports amount
                      y=[stats_flights['flightsCount'], stats_reports_for_hour['byDepartureDate']],
                      depth=depth,

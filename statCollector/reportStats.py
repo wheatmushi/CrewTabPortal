@@ -8,10 +8,10 @@ from datetime import datetime
 sys.path.insert(1, os.path.join('..', '_common'))
 
 
-def update_reports(interface, old_reports):
+def update_reports(interface, old_reports, url_params):
     start_date = datetime.now()
     num_of_days = 3
-    new_reports = interface.get_reports_table(start_date, -num_of_days)
+    new_reports = interface.get_reports_table(start_date, -num_of_days, url_params)
     old_reports['departureDate'] = old_reports['departureDate'].astype('datetime64')
     old_reports['lastUpdate'] = old_reports['lastUpdate'].astype('datetime64')
     old_reports['lastUpdateEnd'] = old_reports['lastUpdateEnd'].astype('datetime64')
@@ -31,6 +31,7 @@ def build_stats(df_reports, df_flights=None):
 
     stats.columns = ['reportsCount']
     stats.index.names = ['date', 'dayOfWeek', 'hour']
+    stats = stats.unstack('hour').fillna(0).stack('hour')
     stats['cumulative24hrs'] = stats.rolling(24).sum()  # cumulative amount for last 24 hours
     stats['cumulativeSince0'] = stats['reportsCount'].groupby('date').cumsum()  # cumulative amount since 0:00 UTC
     stats = stats.reset_index((1, 2))
@@ -43,12 +44,12 @@ def build_stats(df_reports, df_flights=None):
 
     # compare today and yesterday stats
     stats['vsYesterday'] = np.append(np.zeros(24),
-                                     stats['cumulative24hrs'][24:].values - stats['cumulative24hrs'][:-24].values)
+                                     stats['byDepartureDate'][24:].values - stats['byDepartureDate'][:-24].values)
     stats['vsMonth %'] = stats['vsMonth'] / mean_for_month * 100
     stats['vsYesterday %'] = np.append(np.zeros(24),
-                                       stats['vsYesterday'][24:].values / stats['cumulative24hrs'][:-24].values * 100)
-    stats = stats.round(pd.Series([1, 1], index=['vsMonth %', 'vsYesterday %']))
-    if not df_flights.empty:
+                                       stats['vsYesterday'][24:].values / stats['byDepartureDate'][:-24].values * 100)
+
+    if df_flights is not None and not df_flights.empty:
         dates = list(set(df_reports['departureDate']))
         flights_vs_reports = {}
         df_reports['flightNumber'] = df_reports['flightNumber'].astype('int')
@@ -60,9 +61,8 @@ def build_stats(df_reports, df_flights=None):
             flights_vs_reports[d] = len(flights_for_d) - len(reports_for_d)
         stats['vsFlights'] = -stats.index.to_series().map(flights_vs_reports)
 
+    stats = stats.fillna(0)
+    stats = stats.round(0)
+    stats = stats.astype('int')
     stats['date'] = [i.strftime('%m-%d') for i in stats.index.values]
-    stats[['reportsCount', 'byDepartureDate', 'vsMonth', 'vsYesterday', 'vsMonth %', 'vsYesterday %', 'vsFlights']] =\
-        stats[['reportsCount', 'byDepartureDate', 'vsMonth', 'vsYesterday', 'vsMonth %', 'vsYesterday %', 'vsFlights']].fillna(0)
-    stats[['reportsCount', 'byDepartureDate', 'vsMonth', 'vsYesterday', 'vsMonth %', 'vsYesterday %', 'vsFlights']] =\
-        stats[['reportsCount', 'byDepartureDate', 'vsMonth', 'vsYesterday', 'vsMonth %', 'vsYesterday %', 'vsFlights']].astype('int')
     return stats

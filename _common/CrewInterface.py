@@ -59,6 +59,7 @@ class CrewInterface:
         if id_only:
             return flights.index[0]
         flights['departureDate'] = flights['departureDate'].astype('datetime64')
+        flights['flightNumber'] = flights['flightNumber'].astype('int')
         return flights
 
     def get_portal_users(self, is_enabled=False, search_value=''):  # get all CrewTab users (or enabled only)
@@ -126,6 +127,13 @@ class CrewInterface:
                           "dep_airport": '',
                           "arr_airport": '',
                           "reg_number": ''}
+        elif url_params == 'otchet_sb':
+            url_params = {"form_id": '32',
+                          "staff_id": '',
+                          "flight_number": '',
+                          "dep_airport": '',
+                          "arr_airport": '',
+                          "reg_number": ''}
         
         url_params['length'] = 10000
         reports_table = []
@@ -143,4 +151,5 @@ class CrewInterface:
         reports_table['lastUpdate'] = reports_table['lastUpdate'].astype('datetime64')
         reports_table['departureDate'] = reports_table['departureDate'].astype('datetime64')
         reports_table['lastUpdateEnd'] = reports_table['lastUpdateEnd'].astype('datetime64')
+        reports_table['flightNumber'] = reports_table['flightNumber'].astype('int')
         return reports_table
