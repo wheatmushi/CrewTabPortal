@@ -211,7 +211,7 @@ def draw_dashboard(stats_flights, stats_reports, stats_reports_for_hour, depth=9
         plt.close(fig)
 
 
-def plot_dashboard_imgs(stats_flights, stats_reports_for_hour, depth):
+def plot_dashboard_imgs(stats_flights, stats_reports_for_hour, depth, airline):
     print('drawing graphs...')
     plot_bars_double(x=stats_flights['date'],  # pared flights and reports amount
                      y=[stats_flights['flightsCount'], stats_reports_for_hour['byDepartureDate']],
@@ -220,14 +220,14 @@ def plot_dashboard_imgs(stats_flights, stats_reports_for_hour, depth):
                      shift=2,
                      add_lables=[stats_flights['vsWeek +'] + stats_flights['vsWeek -'],
                                  stats_reports_for_hour['vsYesterday'].values],
-                     filename='amount')
+                     filename='{}_amount'.format(airline))
 
     plot_bars(df=stats_flights,  # flights amount compared to last month's mean values for every weekday
               columns=['vsMonth'],
               depth=depth,
               title='flights amount compared to mean for last month',
               graph_type='difference',
-              filename='flights_vs_mean')
+              filename='{}_flights_vs_mean'.format(airline))
 
     plot_bars(df=stats_flights,
               # flights amount compared to previous week (added flight numbers in green and missing in red)
@@ -235,18 +235,18 @@ def plot_dashboard_imgs(stats_flights, stats_reports_for_hour, depth):
               depth=depth,
               title='flights amount compared to previous week (green = new, red = missing)',
               graph_type='difference',
-              filename='flights_vs_week')
+              filename='{}_flights_vs_week'.format(airline))
 
     plot_bars(df=stats_reports_for_hour,  # reports amount (described above) compared to mean amount for month
               columns=['vsMonth %'],
               depth=depth,
               title='reports amount compared to mean for last month, %',
               graph_type='difference',
-              filename='reports_vs_mean')
+              filename='{}_reports_vs_mean'.format(airline))
 
     plot_bars(df=stats_reports_for_hour.iloc[:-1, :],
               columns=['vsFlights'],
               depth=depth,
               title='missing reports',
               graph_type='difference',
-              filename='reports_vs_flights')
+              filename='{}_reports_vs_flights'.format(airline))

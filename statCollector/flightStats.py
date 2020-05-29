@@ -56,10 +56,10 @@ def build_stats(df):  # build stats for flights compared to month mean and last 
     return stats, df_to_check
 
 
-def update_flights(interface, old_flights):
+def update_flights(interface, old_flights, filter_numbers=None):
     start_date = datetime.now() + timedelta(days=2)
     num_of_days = 3
-    new_flights = get_flights_table(interface, start_date, num_of_days, filter_numbers=True)
+    new_flights = get_flights_table(interface, start_date, num_of_days, filter_numbers=filter_numbers)
     old_flights['departureDate'] = old_flights['departureDate'].astype('datetime64')
     df_flights = pd.concat([old_flights, new_flights], axis=0, sort=False)
     dates = df_flights['departureDate'].drop_duplicates()

@@ -24,7 +24,7 @@ while True:
 
     if 'flights_su' in table_list:
         old_flights_su = DB.read_table('flights_su', 'departureDate')
-        df_flights_su = flightStats.update_flights(interface_su, old_flights_su)
+        df_flights_su = flightStats.update_flights(interface_su, old_flights_su, filter_numbers=3000)
     else:
         df_flights_su = flightStats.get_flights_table(interface_su, start_date + timedelta(days=2), 38, filter_numbers=3000)
 
@@ -63,9 +63,9 @@ while True:
                    if_exists='append', index=False)
 
     for depth in (7, 9, 14, 21, 30):
-        visualization.plot_dashboard_imgs(stats_flights_su, stats_reports_for_hour_su, depth=depth)
+        visualization.plot_dashboard_imgs(stats_flights_su, stats_reports_for_hour_su, depth=depth, airline='su')
     for depth in (7, 9, 14, 21, 30):
-        visualization.plot_dashboard_imgs(stats_flights_fv, stats_reports_for_hour_fv, depth=depth)
+        visualization.plot_dashboard_imgs(stats_flights_fv, stats_reports_for_hour_fv, depth=depth, airline='fv')
 
     interface_su.close()
     interface_fv.close()

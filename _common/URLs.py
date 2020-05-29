@@ -15,7 +15,12 @@ URL_flight_crews = 'core/flights/{flight_id}/crew/ajax?draw=1&columns%5B0%5D%5Bd
 #  USER DATA
 # get list of CrewTab users BY length & search_value & is_enabled
 URL_users_list = 'admin/users/ajax?draw=1&columns%5B0%5D%5Bdata%5D=staffId&columns%5B0%5D%5Bname%5D=staffId&columns%5B0%5D%5Bsearchable%5D=true&columns%5B0%5D%5Borderable%5D=true&columns%5B0%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B0%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B1%5D%5Bdata%5D=username&columns%5B1%5D%5Bname%5D=username&columns%5B1%5D%5Bsearchable%5D=true&columns%5B1%5D%5Borderable%5D=true&columns%5B1%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B1%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B2%5D%5Bdata%5D=firstName&columns%5B2%5D%5Bname%5D=firstName&columns%5B2%5D%5Bsearchable%5D=false&columns%5B2%5D%5Borderable%5D=true&columns%5B2%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B2%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B3%5D%5Bdata%5D=lastName&columns%5B3%5D%5Bname%5D=lastName&columns%5B3%5D%5Bsearchable%5D=false&columns%5B3%5D%5Borderable%5D=true&columns%5B3%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B3%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B4%5D%5Bdata%5D=lastUpdate&columns%5B4%5D%5Bname%5D=lastUpdate&columns%5B4%5D%5Bsearchable%5D=false&columns%5B4%5D%5Borderable%5D=true&columns%5B4%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B4%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B5%5D%5Bdata%5D=image&columns%5B5%5D%5Bname%5D=image&columns%5B5%5D%5Bsearchable%5D=false&columns%5B5%5D%5Borderable%5D=false&columns%5B5%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B5%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B6%5D%5Bdata%5D=display&columns%5B6%5D%5Bname%5D=display&columns%5B6%5D%5Bsearchable%5D=false&columns%5B6%5D%5Borderable%5D=false&columns%5B6%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B6%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B7%5D%5Bdata%5D=delete&columns%5B7%5D%5Bname%5D=delete&columns%5B7%5D%5Bsearchable%5D=false&columns%5B7%5D%5Borderable%5D=false&columns%5B7%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B7%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B8%5D%5Bdata%5D=enabled&columns%5B8%5D%5Bname%5D=enabled&columns%5B8%5D%5Bsearchable%5D=true&columns%5B8%5D%5Borderable%5D=true&columns%5B8%5D%5Bsearch%5D%5Bvalue%5D={is_enabled}&columns%5B8%5D%5Bsearch%5D%5Bregex%5D=false&order%5B0%5D%5Bcolumn%5D=0&order%5B0%5D%5Bdir%5D=asc&start=0&length={length}&search%5Bvalue%5D={search_value}&search%5Bregex%5D=false&_=1568721349965'
-
+# enable user BY user_id
+URL_users_enable = 'admin/users/{user_id}/toggle_lock'
+# get CSRF for user password reset BY user_id
+URL_users_reset_password_csrf = 'admin/users/{user_id}/reset_password'
+# reset user password (POST)
+URL_users_reset_password = 'admin/users/%7Bid%7D/reset_password'
 
 #  CATERING DATA
 # get list of categories BY length & search_value

@@ -153,3 +153,35 @@ class CrewInterface:
         reports_table['lastUpdateEnd'] = reports_table['lastUpdateEnd'].astype('datetime64')
         reports_table['flightNumber'] = reports_table['flightNumber'].astype('int')
         return reports_table
+    
+    def activate_all_users(self):
+        user_table = self.get_portal_users()
+        user_table = user_table[user_table['enabled'] == 'false']
+        users_to_activate = user_table.index.values
+        print('start activation of {} users'.format(len(users_to_activate)))
+        activated = []
+        not_activated = []
+        for user_id in users_to_activate:
+            r = self.activate_user(user_id)
+            if r: 
+                activated.append(user_id)
+            else: 
+                not_activated.append(user_id)
+        return activated, not_activated
+    
+    def activate_user(self, user_id, password='su'):
+        self.session.get(URLs.URL_users_enable.format(user_id=user_id))
+        upd = self.reset_user_password(user_id, password)
+        if 'Update successful' in str(upd):
+            print('password update for {} successful'.format(user_id))
+            return True
+        else:
+            print('password update for {} FAILED'.format(user_id))
+            return False
+
+    def reset_user_password(self, user_id, password='su'):
+        csrf = self.session.get_csrf(URLs.URL_users_reset_password_csrf.format(user_id=user_id))
+        data = {'id': user_id, 'token': '', 'credentials': password,
+                'credentialsConfirmation': password, 'save': '', '_csrf': csrf}
+        p = self.session.post(URLs.URL_users_reset_password, data=data)
+        return p.content
