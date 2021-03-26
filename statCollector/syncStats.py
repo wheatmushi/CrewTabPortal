@@ -1,144 +1,111 @@
-#  build devices synchronization statistic in two views: amount of syncs in given time intervals
-#  and receiving of passengers data
-
 import os
-import sys
-from time import time
 import pandas as pd
+from datetime import datetime
+from time import time
 sys.path.insert(1, os.path.join('..', '_common'))
-from crew_utils import date_iterator
+import crew_utils
 from CrewInterface import CrewInterface
-
-
-start_date = '2020-02-19'
-num_of_days = 0
-dates = [d for d in date_iterator(start_date, num_of_days)]
-airports = ['']  # only build stats for this airports
-
 
 pd.set_option('display.width', 320)
 pd.set_option('display.max_columns', 30)
 
 
-def check_intervals(dataframe, drop_duplicates=True):  # create interval/passengers columns for statistic
-
-    def interval(s, table):
-        duration = table[(table['dep_airport'] == s['departureAirport']) &
-                         (table['arr_airport'] == s['arrivalAirport'])]['duration'].min()
-        duration = duration if 30 < duration < 1000 else 50
-        difference = s['difference']
-        if -9 <= difference < duration: return 'full'  # full boarding data
-        if -38 <= difference < -9: return 'registration'  # checked in data
-        if -4320 <= difference < -38: return 'base'  # booking data
-        return 'late_data'  # data received after flight end
-
-    def passengers(s):
-        m = {'full': 'boardedCount', 'registration': 'checkinCount', 'base': 'bookedCount', 'late_data': 'boardedCount'}
-        value_to_check = int(s[m[s['interval']]])
-        if value_to_check == 0: return 'no_data'
-        if value_to_check < 0.7 * int(s['bookedCount']): return 'incorrect'
-        return 'ok'
-    df = dataframe.copy(deep=True)
-    routes_table = pd.read_csv(os.path.join('..', '_DB', 'catering', 'afl_routes.csv'), sep=',')
-    df['synchronizationDate'] = df['synchronizationDate'].astype('datetime64')
-    df['scheduledDepartureDateTime'] = df['scheduledDepartureDateTime'].astype('datetime64')
-    df['difference'] = (df['synchronizationDate'] - df['scheduledDepartureDateTime'])/pd.Timedelta(minutes=1)
-    df['interval'] = df.apply(lambda s: interval(s, routes_table), axis=1)
-    df['passengers'] = df.apply(lambda s: passengers(s), axis=1)
-    if drop_duplicates:
-        df = df.drop_duplicates(['staffId', 'flightNumber', 'scheduledDepartureDateTime', 'interval', 'passengers'])
-    return df
+def check_sync_intervals(row, max_delay):  # filter user syncs by DCS timings for boarded/checkin
+    if row['diff'] < -120:
+        return 'late_data'
+    elif -max_delay < row['diff'] < 9:
+        return 'boarded'
+    elif 9 < row['diff'] < 38:
+        return 'check in'
+    elif 38 < row['diff']:
+        return 'booked'
 
 
-def build_stats(interface, dataframe, start_date, num_of_days, kind, index, columns, percent_axis=None):
-    # kind: passengers (for passengers data) or interval (for sync intervals)
-    # index: rows for stat table (day, hour, departureAirport, staffId, passengers, etc), group by most left first
-    # columns: columns for stat table (position, interval, etc), group by most left first
-    # percent_axis: 0 for percent count along column, 1 for percent count along row, None for raw numbers
-    df = dataframe.copy(deep=True)
-    if ('position' in index or 'position' in columns) and 'position' not in df.columns:
-        df = get_crew_roles(interface, df, start_date, num_of_days)
-    df = df[df['position'].isin(('CM', 'FA'))]
-    df['day'] = df['scheduledDepartureDateTime'].dt.date
-    df['hour'] = df['scheduledDepartureDateTime'].dt.hour
-    interval_type = pd.api.types.CategoricalDtype(categories=['full', 'registration', 'base', 'late_data'],
-                                                  ordered=True)
-    passengers_type = pd.api.types.CategoricalDtype(categories=['ok', 'incorrect', 'no_data'], ordered=True)
-    df['interval'] = df['interval'].astype(interval_type)
-    df['passengers'] = df['passengers'].astype(passengers_type)
-
-    if kind == 'passengers':
-        df = df.sort_values('passengers')
-        df = df.drop_duplicates(['staffId', 'flightNumber', 'departureDate', 'interval'], keep='first')
-        df_late = df[df['interval'] == 'late_data']
-
-        # add 'fake' no_sync records for reg interval if no reg sync detected but sync presence in late_data interval
-        staff_reg = df[df['interval'] == 'registration']['staffId']
-        df_add_reg = df_late[~df_late['staffId'].isin(staff_reg)]
-        df_add_reg['interval'] = 'registration'
-        df_add_reg['passengers'] = 'no_sync'
-        df_add_reg[['synchronizationDate', 'lastUpdate', 'deviceId', 'difference']] = 0
-
-        # add 'fake' no_sync records for full interval if no full sync detected but sync presence in late_data interval
-        staff_full = df[df['interval'] == 'full']['staffId']
-        df_add_full = df_late[~df_late['staffId'].isin(staff_full)]
-        df_add_full['interval'] = 'full'
-        df_add_full['passengers'] = 'no_sync'
-        df_add_full[['synchronizationDate', 'lastUpdate', 'deviceId', 'difference']] = 0
-
-        df = pd.concat([df, df_add_reg, df_add_full], axis=0, sort=False)
-
-    elif kind == 'interval':
-        df = df.sort_values('interval')
-        df = df[df['scheduledDepartureDateTime'] < pd.Timestamp(time(), unit='s')]
-        df = df.drop_duplicates(['staffId', 'flightNumber', 'departureDate'], keep='first')
-
-    stats = df.pivot_table(index=index, columns=columns, aggfunc='size', fill_value=0)
-    if type(percent_axis) is int:
-        stats_percents = stats.apply(lambda line: round(line / line.sum() * 100, 1), axis=percent_axis)
-        if percent_axis == 1:
-            stats_percents.columns = ['% ' + c for c in stats_percents.columns]
-        elif percent_axis == 0:
-            stats_percents.index = ['% ' + c for c in stats_percents.index]
-        stats = pd.concat([stats_percents, stats], axis=percent_axis)
-    return stats.sort_index(ascending=False)
-
-
-def get_crew_roles(interface, df, start_date, num_of_days):  # add crew positions in syncs dataframe, this will slow script with 1
-    # additional http-request per every flight in table (about 800 requests for one day)
-    # NEED TO ADD save temp result mechanism for poor internet connection
+def get_crew_list(interface, start_date, end_date, departure_airport, filter_scheduled=True):  # return full crew roster
+    # for all flights for given airport/dates
     t = time()
-    check_list = df.drop_duplicates(['flightNumber', 'departureDate'])
-    if 'temp_crews.csv' in os.listdir('.'):
-        if input('load crew data from temporary file? y/n') == 'y':
-            temp_crew_table = pd.read_csv('temp_crews.csv', index_col=0, sep=',')
-            check_list = check_list[~((check_list['flightNumber'].isin(temp_crew_table['flightNumber'])) &
-                                    (check_list['departureDate'].isin(temp_crew_table['departureDate'])))]
-    flights = interface.get_flights_table(start_date, num_of_days)
-    print('parsing crew roles for {} flights...'.format(check_list.shape[0]))
-    crew_list = []
-    for i, row in check_list.iterrows():
-        flight_id = flights[(flights['flightNumber'] == row['flightNumber']) &
-                            (flights['departureDate'] == row['departureDate'])].index[0]
-        crews = interface.get_flight_crews(flight_id, log=False)
-        crews['scheduledDepartureDateTime'] = row['scheduledDepartureDateTime']
-        crews['flightNumber'] = row['flightNumber']
-        crews['departureDate'] = row['departureDate']
-        crew_list.append(crews)
-        if len(crew_list) % 500 == 0:
-            print('completed', len(crew_list), 'flights of', check_list.shape[0])
-            temp_crew_table = pd.concat(crew_list, axis=0, sort=False)
-            temp_crew_table.to_csv('temp_crews.csv')
-    crews = pd.concat(crew_list, axis=0, sort=False)
-    crews = crews.drop(['name', 'email', 'DT_RowId'], axis=1)
-    df = df.merge(crews, how='left', on=['staffId', 'flightNumber', 'scheduledDepartureDateTime', 'departureDate'])
-    os.remove('temp_crews.csv')
-    print('crew roles parsing time {} seconds'.format(round(time() - t)))
-    return df
+    df_flights = interface.get_flights_table(start_date=start_date, end_date=end_date,
+                                             departure_airport=departure_airport)
+    if filter_scheduled:
+        if set(df_flights['flightStatusLabel'].values) == {'SCHEDULED'}:
+            print('only scheduled flights found for {}'.format(departure_airport))
+        else:
+            df_flights = df_flights[df_flights['flightStatusLabel'] != 'SCHEDULED']
+    full_crew_list = []
+    for flight_id in df_flights.index.values:
+        crew = interface.get_flight_crews(flight_id, log=False)
+        crew['flightNumber'] = df_flights.loc[flight_id]['flightNumber']
+        crew['departureDate'] = df_flights.loc[flight_id]['departureDateStart']
+        full_crew_list.append(crew)
+    full_crew_list = pd.concat(full_crew_list, axis=0, sort=False)
+    full_crew_list = full_crew_list.drop(['email', 'DT_RowId'], axis=1)
+    print('{} crews parsing time {} seconds'.format(departure_airport, round(time() - t)))
+    return full_crew_list
 
 
-url_main = 'https://admin-su.crewplatform.aero/'
-interface = CrewInterface(url_main)
-df = interface.get_syncs(departure_dates=dates, departure_airports=airports)
-df = check_intervals(df)
-df = get_crew_roles(interface, df, start_date, num_of_days)
+def get_sync_table(interface, departure_airport, start_date, end_date, max_delay):
+    # return table with syncs/crew for one airport
+    df_syncs = interface.get_syncs(departure_dates=crew_utils.date_iterator(start_date, end_date=end_date),
+                                   departure_airports=(departure_airport,))
+    df_syncs['diff'] = (df_syncs['scheduledDepartureDateTime'] - df_syncs['synchronizationDate']).astype('timedelta64[m]')
+    df_syncs['interval'] = df_syncs.apply(lambda row: check_sync_intervals(row, max_delay), axis=1)
+    df_crews = get_crew_list(itf, start_date, end_date, departure_airport)
+    df = df_syncs.merge(df_crews, left_on=['staffId','flightNumber', 'departureDate'],
+                        right_on=['staffId', 'flightNumber', 'departureDate'])
+
+    interval_ranged = pd.api.types.CategoricalDtype(categories=['boarded', 'check in', 'booked', 'late_data'], ordered=True)
+    df['interval'] = df['interval'].astype(interval_ranged)
+    df['boardedCount'] = df['boardedCount'].astype('int')
+    df = df.sort_values(['interval', 'boardedCount'], ascending=[True, False])
+    return df.drop_duplicates(['staffId', 'flightNumber', 'departureDate'])
+
+
+air1 = ['JFK']  # airport list for 1st set of parameters
+air2 = ['LED']  # airport list for 2nd set of parameters
+sd1 = '2021-02-01'  # start date for stat gathering 1st set
+sd2 = '2021-02-01'  # start date for stat gathering 2nd set
+ed1 = '2021-02-03'  # end date for stat gathering 1st set
+ed2 = '2021-02-03'  # end date for stat gathering 2nd set
+delay1 = 180  # max minutes for departure delay, must be less then flight duration, 1st set
+delay2 = 60   # max minutes for departure delay, must be less then flight duration, 2nd set
+
+url = 'https://admin-su.crewplatform.aero/'
+itf = CrewInterface(url)
+
+table = []
+iterator = crew_utils.packer(4, air1, sd1, ed1, delay1, air2, sd2, ed2, delay2)
+
+for param_list in iterator:
+    for airport, start_date, end_date, delay in param_list:
+        t = get_sync_table(itf, airport, start_date, end_date, delay)
+        table.append(t)
+df = pd.concat(table, axis=0, sort=False)
+df.to_csv('sync_history_{}.csv'.format(datetime.now().strftime('%Y%m%d_%H%M')), index=False)
+
+stats = df.groupby(['departureAirport', 'interval', 'position']).size()
+stats = stats.reindex(pd.MultiIndex.from_product([stats.index.levels[0],
+                                                  ['boarded', 'booked', 'check in', 'late data'], ['CM', 'FA']],
+                                                 names=['airport', 'interval', 'position']), fill_value=0)
+
+stats.name = 'count'
+stats = stats.reset_index()
+stats = pd.pivot_table(data=stats, values='count', index='airport', columns=['position', 'interval'])
+
+stats_cm = stats[['CM']]
+stats_fa = stats[['FA']]
+stats_cm_p = stats_cm.copy(deep=True)
+stats_fa_p = stats_fa.copy(deep=True)
+
+stats_cm_p = stats_cm_p.apply(lambda r: r/r.sum(), axis=1)*100
+stats_fa_p = stats_fa_p.apply(lambda r: r/r.sum(), axis=1)*100
+stats_cm_p.columns.set_levels(['boarded, %', 'booked, %', 'check in, %', 'late data, %'], level=1, inplace=True)
+stats_fa_p.columns.set_levels(['boarded, %', 'booked, %', 'check in, %', 'late data, %'], level=1, inplace=True)
+
+stats_cm.loc['total/mean'] = stats_cm.apply(pd.np.sum)
+stats_fa.loc['total/mean'] = stats_fa.apply(pd.np.sum)
+stats_cm_p.loc['total/mean'] = stats_cm_p.apply(pd.np.mean)
+stats_fa_p.loc['total/mean'] = stats_fa_p.apply(pd.np.mean)
+
+stats = pd.concat([stats_cm, stats_cm_p, stats_fa, stats_fa_p], axis=1)
+stats = stats.round(0).astype('int')
+stats.to_csv('sync_stats_{}.csv'.format(datetime.now().strftime('%Y%m%d_%H%M')))

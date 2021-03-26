@@ -31,7 +31,7 @@ class CatInterface:
             name = BeautifulSoup(cat['name'], 'html.parser').text.split('\n')
             name_en = name[0].replace('English: ', '')
             name_ru = name[1].replace('Russian: ', '')
-            if exactly is False or exactly is True and (search_value in (name_ru, name_en)):
+            if not exactly or search_value in (name_ru, name_en):
                 if key == 'name_en':
                     cat_dict[name_en] = (row_id, pos, name_ru)
                 elif key == 'row_id':
@@ -157,7 +157,8 @@ class CatInterface:
         name_to_num = {'nuts': 4, 'gluten': 5, 'lactose': 6, 'fish': 8, 'eggs': 22, 'milk': 25, 'mustard': 28,
                        'clams': 31, 'soy': 34, 'cereals': 37, 'sesame': 40, 'celery': 43, 'shrimps': 46,
                        'sesame oil': 49, 'anchovies': 52, 'wheat flour': 55, 'salmon': 58, 'oysters': 61,
-                       'sour cream': 64}
+                       'sour cream': 64, 'honey': 65}
+        name = name.strip()
         print('modifying allergen: {}'.format(name))
         csrf = self.session.get_csrf(URLs.URL_catering_item.format(item_id=item_id))
         data = {'_csrf': csrf, 'cateringItemId': item_id, 'allergenId': name_to_num[name.casefold()],
@@ -167,18 +168,19 @@ class CatInterface:
             print('allergen', name, 'was not added to item', item_id)
         return p
 
-    def get_item(self, search_value, exactly=True):
-        items = self.session.get(URLs.URl_catering_items.format(search_value=search_value, length=30))
+    def find_items(self, search_value, length=100):
+        items = self.session.get(URLs.URL_catering_items.format(search_value=search_value, length=length))
         items = json.loads(items.content)['data']
         items = [i for i in items if search_value in i['description_translations']]
         if len(items) == 0:
             print('no items found')
             return None
-        elif len(items) > 1:
+        elif len(items) > 1 and length == 1:
             print('more than one item found')
             return None
         else:
-            return items[0]['DT_RowId'].replace(',', '')
+            print('items requested: {}, items found: {}'.format(length, len(items)))
+            return [i['DT_RowId'].replace(',', '') for i in items]
 
     def get_allergens(self, item_id, search_value='', length=20):
         allergens = self.session.get(URLs.URL_catering_allergens.format(item_id=item_id, search_value=search_value, length=length))
@@ -186,6 +188,34 @@ class CatInterface:
         allergens = [BeautifulSoup(a['name_translations'], 'html.parser').text.split('\n')[0].split(': ')[1].casefold()
                      for a in allergens]
         return allergens
+
+    def add_option(self, item_id, name_en, name_ru, short_name):
+        print('adding option \'{}\' for item {}'.format(name_en, item_id))
+        csrf = self.session.get_csrf(URLs.URL_catering_edit_item.format(item_id=item_id))
+        data = {"_csrf": csrf,
+                "itemId": item_id,
+                "name[0].idLanguage": '4',
+                "name[0].defaultLanguage": 'true',
+                "name[0].languageName": 'English',
+                "name[0].value": name_en,  # ENGLISH NAME
+                "name[1].idTranslation": '',
+                "name[1].idLanguage": '5',
+                "name[1].defaultLanguage": 'false',
+                "name[1].languageName": 'Russian',
+                "name[1].value": name_ru,  # RUSSIAN NAME
+                "name[2].idTranslation": '',
+                "name[2].idLanguage": '7',
+                "name[2].defaultLanguage": 'false',
+                "name[2].languageName": 'French',
+                "name[2].value": '',
+                "name[3].idTranslation": '',
+                "name[3].idLanguage": '8',
+                "name[3].defaultLanguage": 'false',
+                "name[3].languageName": 'Italian',
+                "name[3].value": '',
+                "shortName": short_name,  # ITEM SHORT NAME
+                "save": ''}
+        return self.session.post(URLs.URL_catering_add_options, data=data)
 
     def delete_whole_menu(self, search_value):  # recursively delete top level category with all content
         parent_cat = self.get_cat_ids(search_value, exactly=True)

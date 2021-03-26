@@ -155,87 +155,83 @@ class Item:
             return False
 
     def modify(self, subcat_id, item_id, confirm=True):  # edit existing item
-        item_data, item_file = self.prepare(subcat_id, item_id)
-        self.interface.modify_item(subcat_id, item_data, item_file, 'modifying', item_id, confirm=confirm)
+        item_data, item_file = self.prepare_item(subcat_id, item_id)
+        p = self.interface.modify_item(subcat_id, item_data, item_file, 'modifying', item_id, confirm=confirm)
         if isinstance(self.data['item allergens'], str):
             server_allergens = set(self.interface.get_allergens(item_id))
             table_allergens = set(self.data['item allergens'].split(', '))
             for allergen in server_allergens.symmetric_difference(table_allergens):
                 self.interface.edit_allergens(allergen, item_id)
+        return p
 
     def create(self, subcat_id, confirm=True):  # create new item
-        item_data, item_file = self.prepare(subcat_id)
-        self.interface.modify_item(subcat_id, item_data, item_file, 'creating', confirm=confirm)
+        item_data, item_file = self.prepare_item(subcat_id)
+        print(item_data)
+        print(item_file)
+        p = self.interface.modify_item(subcat_id, item_data, item_file, 'creating', confirm=confirm)
         if isinstance(self.data['item allergens'], str):
             item_id = self.interface.get_items_in_subcat(subcat_id, search_value=self.data['item name en'])
             item_id = list(item_id.values())[0][0]
             for allergen in self.data['item allergens'].split(', '):
                 self.interface.edit_allergens(allergen, item_id)
+        return p
 
-    def prepare(self, subcat_id, item_id=''):  # prepare data for POSTing (creating/modifying) item
-        data = {'idItem': item_id,
-                'name[0].idTranslation': '',
-                'name[0].idLanguage': '4',
-                'name[0].defaultLanguage': 'true',
-                'name[0].languageName': 'English',
-                'name[0].value': self.data['item name en'],  # ENGLISH NAME
-                'name[1].idTranslation': '',
-                'name[1].idLanguage': '5',
-                'name[1].defaultLanguage': 'false',
-                'name[1].languageName': 'Russian',
-                'name[1].value': self.data['item name ru'],  # RUSSIAN NAME
-                'name[2].idTranslation': '',
-                'name[2].idLanguage': '7',
-                'name[2].defaultLanguage': 'false',
-                'name[2].languageName': 'French',
-                'name[2].value': '',
-                'name[3].idTranslation': '',
-                'name[3].idLanguage': '8',
-                'name[3].defaultLanguage': 'false',
-                'name[3].languageName': 'Italian',
-                'name[3].value': '',
-                'name[4].idTranslation': '',
-                'name[4].idLanguage': '10',
-                'name[4].defaultLanguage': 'false',
-                'name[4].languageName': 'Polish',
-                'name[4].value': '',
-                'description[0].idTranslation': '',
-                'description[0].idLanguage': '4',
-                'description[0].defaultLanguage': 'true',
-                'description[0].languageName': 'English',
-                'description[0].value': self.data['full description en'],  # ENGLISH DESCRIPTION
-                'description[1].idTranslation': '',
-                'description[1].idLanguage': '5',
-                'description[1].defaultLanguage': 'false',
-                'description[1].languageName': 'Russian',
-                'description[1].value': self.data['full description ru'],  # RUSSIAN DESCRIPTION
-                'description[2].idTranslation': '',
-                'description[2].idLanguage': '7',
-                'description[2].defaultLanguage': 'false',
-                'description[2].languageName': 'French',
-                'description[2].value': '',
-                'description[3].idTranslation': '',
-                'description[3].idLanguage': '8',
-                'description[3].defaultLanguage': 'false',
-                'description[3].languageName': 'Italian',
-                'description[3].value': '',
-                'description[4].idTranslation': '',
-                'description[4].idLanguage': '10',
-                'description[4].defaultLanguage': 'false',
-                'description[4].languageName': 'Polish',
-                'description[4].value': '',
-                'idCategory': subcat_id,  # TARGET CATEGORY
-                'shortName': self.data['item short name ru'],  # ITEM SHORT NAME
-                '_limitedQuantity': 'on',
-                '_availableOnAllFlights': 'on',
-                '_gmPreparationRequired': 'on',
-                '_displayOnBeverageSummary': 'on',
-                '_showInHistory': 'on',
-                'color': '#000000',
-                'position': self.data['item position'],
-                'nameLocalizedValueId': '',
-                'descriptionLocalizedValueId': '',
-                'save': ''}
+    def prepare_item(self, subcat_id, item_id=''):  # prepare data for POSTing (creating/modifying) item
+        data = {"idItem": item_id,
+             "name[0].idTranslation": '',
+             "name[0].idLanguage": '4',
+             "name[0].defaultLanguage": 'true',
+             "name[0].languageName": 'English',
+             "name[0].value": self.data['item name en'],  # ENGLISH NAME
+             "name[1].idTranslation":'',
+             "name[1].idLanguage": '5',
+             "name[1].defaultLanguage": 'false',
+             "name[1].languageName": 'Russian',
+             "name[1].value": self.data['item name ru'],  # RUSSIAN NAME
+             "name[2].idTranslation": '',
+             "name[2].idLanguage": '7',
+             "name[2].defaultLanguage": 'false',
+             "name[2].languageName": 'French',
+             "name[2].value": '',
+             "name[3].idTranslation": '',
+             "name[3].idLanguage": '8',
+             "name[3].defaultLanguage": 'false',
+             "name[3].languageName": 'Italian',
+             "name[3].value": '',
+             "description[0].idTranslation": '',
+             "description[0].idLanguage": '4',
+             "description[0].defaultLanguage": 'true',
+             "description[0].languageName": 'English',
+             "description[0].value": self.data['full description en'],  # ENGLISH DESCRIPTION
+             "description[1].idTranslation": '',
+             "description[1].idLanguage": '5',
+             "description[1].defaultLanguage": 'false',
+             "description[1].languageName": 'Russian',
+             "description[1].value": self.data['full description ru'],  # RUSSIAN DESCRIPTION
+             "description[2].idTranslation": '',
+             "description[2].idLanguage": '7',
+             "description[2].defaultLanguage": 'false',
+             "description[2].languageName": 'French',
+             "description[2].value": '',
+             "description[3].idTranslation": '',
+             "description[3].idLanguage": '8',
+             "description[3].defaultLanguage": 'false',
+             "description[3].languageName": 'Italian',
+             "description[3].value": '',
+             "idCategory": subcat_id,  # TARGET CATEGORY
+             "shortName": self.data['item short name ru'],  # ITEM SHORT NAME
+             "_limitedQuantity": 'on',
+             "_availableOnAllFlights": 'on',
+             "_gmPreparationRequired": 'on',
+             "_displayOnBeverageSummary": 'on',
+             "_showInHistory": 'on',
+             "color": '#000000',
+             "position": self.data['item position'],
+             "validityDateStart": '',
+             "validityDateEnd": '',
+             "nameLocalizedValueId": '',
+             "descriptionLocalizedValueId": '',
+             "save": ''}
         if self.data['is limited'] == '1':
             data['limitedQuantity'] = 'true'
         if self.data['is for all flights'] == '1':

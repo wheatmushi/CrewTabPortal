@@ -9,6 +9,18 @@ import auth
 import crew_utils
 
 
+def timer(method_to_decorate):
+    def wrapper(*args, **kwargs):
+        name = method_to_decorate.__name__.replace('get_', '')
+        print('parsing {}...'.format(name))
+        t = time()
+        result = method_to_decorate(*args, **kwargs)
+        t = round(time() - t)
+        print('{} parsing time {} seconds'.format(name, t))
+        return result
+    return wrapper
+
+
 class CrewInterface:
     def __init__(self, url_main, login=None, password=None):
         self.url_main = url_main
@@ -26,7 +38,10 @@ class CrewInterface:
         base_info = {base_head[i]: base_content[i] for i in range(len(base_head))}
         base_info['Flight Number'] = base_info['Flight Number'].replace('SU', '')
         for i in ['Scheduled Departure', 'Estimated Departure', 'Scheduled Arrival']:
-            base_info[i] = datetime.strptime(base_info[i], '%d/%b/%Y %H:%M:%S %Z')
+            try:
+                base_info[i] = datetime.strptime(base_info[i], '%d/%b/%Y %H:%M:%S %Z')
+            except:
+                base_info[i] = None
         base_info['Duration'] = int(
             (base_info['Scheduled Arrival'] - base_info['Scheduled Departure']).total_seconds() // 60)
         pass_head = [cell.text for cell in tables[1].find_all('th')][1:]
@@ -38,18 +53,30 @@ class CrewInterface:
         else:
             return base_info['Scheduled Departure'], base_info['Scheduled Arrival']
 
-    def get_flights_table(self, start_date, num_of_days, flight_numbers=None, length=1100, id_only=False):
+    @timer
+    def get_flights_table(self, start_date, end_date=None, num_of_days=None, flight_numbers='', departure_airport='',
+                          arrival_airport='', length=2000, id_only=False, filter_status=False):
         # get flight table for range of dates OR one flight DB ID
-        print('parsing flight table...')
-        flights = []
-        dates_range = crew_utils.date_iterator(start_date, num_of_days)
-        if flight_numbers and type(flight_numbers) is str:
-            flight_numbers = (flight_numbers,)
-        for d in dates_range:
-            f = self.session.get(URLs.URL_flights_list.format(flight_number='', departure_date=d, length=length))
+        if departure_airport and departure_airport.upper() != 'SVO':
+            f = self.session.get(URLs.URL_flights_list.format(flight_number=flight_numbers,
+                                                              departure_airport=departure_airport,
+                                                              arrival_airport=arrival_airport,
+                                                              departure_date='',
+                                                              length=length))
             f = json.loads(f.content)['data']
-            flights.append(pd.DataFrame(data=f))
-        flights = pd.concat(flights, axis=0, sort=False)
+            flights = pd.DataFrame(data=f)
+        else:
+            flights = []
+            dates_range = crew_utils.date_iterator(start_date, end_date=end_date, num_of_days=num_of_days)
+            if flight_numbers and type(flight_numbers) is str:
+                flight_numbers = (flight_numbers,)
+            for d in dates_range:
+                f = self.session.get(URLs.URL_flights_list.format(flight_number='', departure_airport=departure_airport,
+                                                                  arrival_airport=arrival_airport, departure_date=d,
+                                                                  length=length))
+                f = json.loads(f.content)['data']
+                flights.append(pd.DataFrame(data=f))
+            flights = pd.concat(flights, axis=0, sort=False)
         flights = crew_utils.dtrowid_to_index(flights)
         flights = flights.drop('details', axis=1)
         if flight_numbers:
@@ -58,8 +85,16 @@ class CrewInterface:
             print('no flights found!!')
         if id_only:
             return flights.index[0]
-        flights['departureDate'] = flights['departureDate'].astype('datetime64')
-        flights['flightNumber'] = flights['flightNumber'].astype('int')
+        if filter_status:
+            flights = flights[flights['flightStatusLabel'] != filter_status]
+        flights['departureDateStart'] = flights['departureDateStart'].astype('datetime64')
+        flights = flights[flights['departureDateStart'].isin(list(crew_utils.date_iterator(start_date,
+                                                                                           end_date=end_date,
+                                                                                           num_of_days=num_of_days)))]
+        flights['paxInfoAvailable'] = flights['paxInfoAvailable'].replace(
+            {'<i class="fa fa-ban"></i><span class="hidden">false</span>': False,
+             '<i class="fa fa-check"></i><span class="hidden">true</span>': True})
+        #flights['flightNumber'] = flights['flightNumber'].astype('int')
         return flights
 
     def get_portal_users(self, is_enabled=False, search_value=''):  # get all CrewTab users (or enabled only)
@@ -87,9 +122,9 @@ class CrewInterface:
         print('closing CrewInterface session...')
         self.session.close()
 
+    @timer
     def get_syncs(self, departure_dates=('',), staff_id='', flight_number='', departure_airports=('',), length=20000):
         # load user's synchronizations from server
-        t = time()
         syncs = []
         if flight_number:
             flight_number = '0'*(4-len(flight_number)) + flight_number
@@ -104,15 +139,15 @@ class CrewInterface:
         syncs = pd.concat(syncs, axis=0, sort=False)
         syncs = crew_utils.dtrowid_to_index(syncs)
         syncs['lastUpdate'] = syncs['lastUpdate'].astype('datetime64')
+        syncs['departureDate'] = syncs['departureDate'].astype('datetime64')
         syncs['scheduledDepartureDateTime'] = syncs['scheduledDepartureDateTime'].astype('datetime64')
         syncs['synchronizationDate'] = syncs['synchronizationDate'].astype('datetime64')
-        print('syncs parsing time {} seconds'.format(round(time() - t)))
         return syncs
 
+    @timer
     def get_reports_table(self, start_date, num_of_days, url_params='purser'):
         # load crew reports records, all parameters in url_params dict (start/end dates, form id, staff id, flight num,
         # tail number, dep/arr airport, length of list
-        print('parsing reports table...')
         if type(start_date) is datetime:
             start_date = start_date.strftime('%Y-%m-%d')
         if 'admin-fv' in self.url_main:
@@ -185,3 +220,37 @@ class CrewInterface:
                 'credentialsConfirmation': password, 'save': '', '_csrf': csrf}
         p = self.session.post(URLs.URL_users_reset_password, data=data)
         return p.content
+
+    @timer
+    def get_catering_closed_sessions(self, flight_number='', departure_airport='', date_start='', date_end=''):
+        # load catering sessions statistic for given airport/dates/flight
+
+        def get_one(self, flight_number=flight_number, departure_airport=departure_airport,
+                    date_start=date_start, date_end=date_end, length=1000):
+            r = self.session.get(URLs.get_catering_closed_sessions.format(flight_number=flight_number,
+                                                                          departure_airport=departure_airport,
+                                                                          date_start=date_start,
+                                                                          date_end=date_end,
+                                                                          length=length))
+            r = json.loads(r.content)['data']
+            return r
+
+        if departure_airport and departure_airport.upper() != 'SVO':
+            cat_sessions = get_one(self, departure_airport=departure_airport, date_start=date_start, date_end=date_end)
+            cat_sessions = pd.DataFrame(data=cat_sessions)
+        else:
+            cat_sessions = []
+            dates_range = crew_utils.date_iterator(date_start, end_date=date_end)
+            for d in dates_range:
+                sessions = get_one(self, departure_airport=departure_airport, date_start=d, date_end=d)
+                cat_sessions.append(pd.DataFrame(data=sessions))
+            cat_sessions = pd.concat(cat_sessions, axis=0, sort=False)
+
+        cat_sessions = cat_sessions.drop('display', axis=1)
+        cat_sessions = crew_utils.dtrowid_to_index(cat_sessions)
+        cat_sessions['earliestLocalDepartureDate'] = cat_sessions['earliestLocalDepartureDate'].astype('datetime64')
+        cat_sessions['latestLocalDepartureDate'] = cat_sessions['latestLocalDepartureDate'].astype('datetime64')
+        cat_sessions['amountOfOrders'] = cat_sessions['amountOfOrders'].astype('int')
+        cat_sessions['amountOfCrewOperated'] = cat_sessions['amountOfCrewOperated'].astype('int')
+        cat_sessions['amountOfOrdersServed'] = cat_sessions['amountOfOrdersServed'].astype('int')
+        return cat_sessions

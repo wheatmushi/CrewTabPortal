@@ -2,8 +2,9 @@ import URLs
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import requests
+import itertools
 
-name_to_position = {'AAQ (ret)': 10, 'AER (ret)': 11, 'AGP (ret)': 12, 'VLC (ret)': 12, 'ALC (ret)': 12, 'ARN (ret)': 13, 'ASF (ret)': 13, 'BKK (ret)': 14, 'HKT (ret)': 14, 'CAN (ret)': 15, 'CEK (ret)': 16, 'DEL (ret)': 17, 'DUS (ret)': 18, 'DXB (ret)': 19, 'DWC (ret)': 19, 'EVN (ret)': 20, 'HAN (ret)': 21, 'HAV (ret)': 22, 'HKG (ret)': 23, 'IAD (ret)': 24, 'ICN (ret)': 25, 'IKT (ret)': 26, 'JFK (ret)': 27, 'KHV (ret)': 28, 'KRR (ret)': 29, 'LAX (ret)': 30, 'LIS (ret)': 31, 'MAD (ret)': 32, 'MIA (ret)': 33, 'MLE (ret)': 34, 'NRT (ret)': 35, 'PEE (ret)': 36, 'PEK (ret)': 37, 'PKC (ret)': 38, 'PRG (ret)': 39, 'PVG (ret)': 40, 'SGN (ret)': 41, 'SIP (ret)': 42, 'STW (ret)': 43, 'SVX (ret)': 44, 'TFS (ret)': 45, 'TLV (ret)': 46, 'UFA (ret)': 47, 'ULN (ret)': 48, 'UUS (ret)': 49, 'VVO (ret)': 50, 'YKS (ret)': 51, 'TST (ret)': 999, 'AGP  VLC  ALC (ret)': 12, 'BKK  HKT (ret)': 14, 'DXB  DWC (ret)': 19, '2-6hr. Breakfast': 2, '2-6hr. Lunch': 3, '6+ hours': 4}
+name_to_position = {'AAQ (ret)': 10, 'AER (ret)': 11, 'AGP (ret)': 12, 'VLC (ret)': 12, 'ALC (ret)': 12, 'ARN (ret)': 13, 'ASF (ret)': 13, 'BKK (ret)': 14, 'HKT (ret)': 14, 'CAN (ret)': 15, 'CEK (ret)': 16, 'CMB (ret)': 17, 'DEL (ret)': 17, 'DUS (ret)': 18, 'DXB (ret)': 19, 'DWC (ret)': 19, 'EVN (ret)': 20, 'HAN (ret)': 21, 'HAV (ret)': 22, 'HKG (ret)': 23, 'IAD (ret)': 24, 'ICN (ret)': 25, 'IKT (ret)': 26, 'JFK (ret)': 27, 'KHV (ret)': 28, 'KRR (ret)': 29, 'LAX (ret)': 30, 'LIS (ret)': 31, 'MAD (ret)': 32, 'MIA (ret)': 33, 'MLE (ret)': 34, 'NRT (ret)': 35, 'PEE (ret)': 36, 'PEK (ret)': 37, 'PKC (ret)': 38, 'PRG (ret)': 39, 'PVG (ret)': 40, 'SEZ (ret)': 40, 'SGN (ret)': 41, 'SIP (ret)': 42, 'STW (ret)': 43, 'SVX (ret)': 44, 'TFS (ret)': 45, 'TLV (ret)': 46, 'UFA (ret)': 47, 'ULN (ret)': 48, 'UUS (ret)': 49, 'VVO (ret)': 50, 'YKS (ret)': 51, 'TST (ret)': 999, 'AGP  VLC  ALC (ret)': 12, 'BKK  HKT (ret)': 14, 'DXB  DWC (ret)': 19, '2-6hr. Breakfast': 2, '2-6hr. Lunch': 3, '6+ hours': 4}
 
 
 def table_2_dict(table, D, drop_t=(0, None), drop_l=(0, None)):
@@ -49,9 +50,16 @@ def acc_auth():  # just draft
     soup = BeautifulSoup(r.content, 'html.parser')
 
 
-def date_iterator(start_date, num_of_days):  # iterate over days end generate new str with date
+def date_iterator(start_date, end_date=None, num_of_days=None):  # iterate over days end generate new str with date
     if type(start_date) is not datetime:
         start_date = datetime.strptime(start_date, '%Y-%m-%d')
+    if end_date:
+        if type(end_date) is not datetime:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        while start_date != end_date:
+            yield '{:%Y-%m-%d}'.format(start_date)
+            start_date += timedelta(days=1)
+        return 0
     for i in range(min(num_of_days, 0), max(num_of_days, 1)):
         date = '{:%Y-%m-%d}'.format(start_date + timedelta(days=i))
         yield date
@@ -62,3 +70,17 @@ def dtrowid_to_index(df):  # just change pd.Dataframe indexes to original DB IDs
     df['DT_RowId'] = df['DT_RowId'].astype('int')
     df = df.set_index('DT_RowId')
     return df
+
+
+def packer(amount, *args):
+    full_list = []
+    if len(args) % amount != 0:
+        print('WARNING: wrong amount of arguments!!!')
+        return None
+    else:
+        while args:
+            list1 = args[0]
+            it = itertools.product(list1, (args[1],), (args[2],), (args[3],))
+            full_list.append(it)
+            args = args[4:]
+    return full_list
