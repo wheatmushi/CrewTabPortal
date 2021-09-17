@@ -8,10 +8,10 @@ from datetime import datetime
 sys.path.insert(1, os.path.join('..', '_common'))
 
 
-def update_reports(interface, old_reports, url_params):
+def update_reports(interface, old_reports, report):
     start_date = datetime.now()
     num_of_days = 3
-    new_reports = interface.get_reports_table(start_date, -num_of_days, url_params)
+    new_reports = interface.get_reports_table(start_date, -num_of_days, report)
     old_reports['departureDate'] = old_reports['departureDate'].astype('datetime64')
     old_reports['lastUpdate'] = old_reports['lastUpdate'].astype('datetime64')
     old_reports['lastUpdateEnd'] = old_reports['lastUpdateEnd'].astype('datetime64')
@@ -55,7 +55,7 @@ def build_stats(df_reports, df_flights=None):
         df_reports['flightNumber'] = df_reports['flightNumber'].astype('int')
         for d in dates:
             reports_for_d = df_reports[df_reports['departureDate'] == d]['flightNumber']
-            flights_for_d = df_flights[(df_flights['departureDate'] == d) &
+            flights_for_d = df_flights[(df_flights['departureDateStart'] == d) &
                                        (df_flights['flightStatusLabel'] != 'CANCELED')]['flightNumber']
             # flights_vs_reports[d] = len(set(flights_for_d.values).difference(reports_for_d.values))
             flights_vs_reports[d] = len(flights_for_d) - len(reports_for_d)

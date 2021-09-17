@@ -9,8 +9,8 @@ pd.set_option('display.width', 320)
 pd.set_option('display.max_columns', 30)
 
 departure_airport = 'SVO'
-date_start = '2021-01-01'
-date_end = '2021-02-15'
+date_start = '2021-05-27'
+date_end = '2021-05-30'
 
 
 def check_missing_catering_sessions(itf, date_start, date_end):
@@ -27,6 +27,7 @@ def check_missing_catering_sessions(itf, date_start, date_end):
                             right_on=['flightNumber', 'earliestLocalDepartureDate', 'departureAirport'])
     flights = flights[['flightNumber', 'departureAirport', 'departureDateStart', 'flightStatusLabel', 'paxInfoAvailable',
                        'menu', 'amountOfCrewOperated', 'amountOfOrders', 'amountOfOrdersServed']]
+    flights = flights[flights['menu'] != 'less 2 hrs']
     flights['catering_done'] = flights['amountOfOrders'].apply(lambda s: False if isnan(s) else True)
 
     stats = pd.DataFrame(flights.groupby('catering_done').size(), columns=['amount'])

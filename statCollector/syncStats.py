@@ -21,7 +21,7 @@ def check_sync_intervals(row, max_delay):  # filter user syncs by DCS timings fo
         return 'booked'
 
 
-def get_crew_list(interface, start_date, end_date, departure_airport, filter_scheduled=True):  # return full crew roster
+def get_crew_list(interface, start_date, end_date, departure_airport, filter_scheduled=False):  # return full crew roster
     # for all flights for given airport/dates
     t = time()
     df_flights = interface.get_flights_table(start_date=start_date, end_date=end_date,
@@ -60,16 +60,16 @@ def get_sync_table(interface, departure_airport, start_date, end_date, max_delay
     return df.drop_duplicates(['staffId', 'flightNumber', 'departureDate'])
 
 
-air1 = ['JFK']  # airport list for 1st set of parameters
-air2 = ['LED']  # airport list for 2nd set of parameters
-sd1 = '2021-02-01'  # start date for stat gathering 1st set
-sd2 = '2021-02-01'  # start date for stat gathering 2nd set
-ed1 = '2021-02-03'  # end date for stat gathering 1st set
-ed2 = '2021-02-03'  # end date for stat gathering 2nd set
-delay1 = 180  # max minutes for departure delay, must be less then flight duration, 1st set
-delay2 = 60   # max minutes for departure delay, must be less then flight duration, 2nd set
+air1 = ['LCA']  # airport list for 1st set of parameters
+air2 = []  # airport list for 2nd set of parameters
+sd1 = '2021-07-01'  # start date for stat gathering 1st set
+sd2 = '2021-07-01'  # start date for stat gathering 2nd set
+ed1 = '2021-07-20'  # end date for stat gathering 1st set
+ed2 = '2021-07-20'  # end date for stat gathering 2nd set
+delay1 = 200  # max minutes for departure delay, must be less then flight duration, 1st set
+delay2 = 200   # max minutes for departure delay, must be less then flight duration, 2nd set
 
-url = 'https://admin-su.crewplatform.aero/'
+url = 'https://admin-fv.crewplatform.aero/'
 itf = CrewInterface(url)
 
 table = []
@@ -84,15 +84,15 @@ df.to_csv('sync_history_{}.csv'.format(datetime.now().strftime('%Y%m%d_%H%M')), 
 
 stats = df.groupby(['departureAirport', 'interval', 'position']).size()
 stats = stats.reindex(pd.MultiIndex.from_product([stats.index.levels[0],
-                                                  ['boarded', 'booked', 'check in', 'late data'], ['CM', 'FA']],
+                                                  ['boarded', 'booked', 'check in', 'late data'], ['CCC', 'CC']],
                                                  names=['airport', 'interval', 'position']), fill_value=0)
 
 stats.name = 'count'
 stats = stats.reset_index()
 stats = pd.pivot_table(data=stats, values='count', index='airport', columns=['position', 'interval'])
 
-stats_cm = stats[['CM']]
-stats_fa = stats[['FA']]
+stats_cm = stats[['CCC']]
+stats_fa = stats[['CC']]
 stats_cm_p = stats_cm.copy(deep=True)
 stats_fa_p = stats_fa.copy(deep=True)
 

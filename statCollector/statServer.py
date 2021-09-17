@@ -30,9 +30,9 @@ while True:
 
     if 'reports_su' in table_list:
         old_reports_su = DB.read_table('reports_su', 'departureDate')
-        df_reports_su = reportStats.update_reports(interface_su, old_reports_su, url_params='purser')
+        df_reports_su = reportStats.update_reports(interface_su, old_reports_su, report='purser')
     else:
-        df_reports_su = interface_su.get_reports_table(start_date, -36, url_params='purser')
+        df_reports_su = interface_su.get_reports_table(start_date, -36, report='purser')
 
     if 'flights_fv' in table_list:
         old_flights_fv = DB.read_table('flights_fv', 'departureDate')
@@ -42,9 +42,9 @@ while True:
 
     if 'reports_fv' in table_list:
         old_reports_fv = DB.read_table('reports_fv', 'departureDate')
-        df_reports_fv = reportStats.update_reports(interface_fv, old_reports_fv, url_params='otchet_sb')
+        df_reports_fv = reportStats.update_reports(interface_fv, old_reports_fv, report='otchet_sb')
     else:
-        df_reports_fv = interface_fv.get_reports_table(start_date, -36, url_params='otchet_sb')
+        df_reports_fv = interface_fv.get_reports_table(start_date, -36, report='otchet_sb')
 
     stats_flights_su, df_to_check_flights_su = flightStats.build_stats(df_flights_su)
     stats_flights_fv, df_to_check_flights_fv = flightStats.build_stats(df_flights_fv)

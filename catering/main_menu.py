@@ -4,7 +4,7 @@ import CatInterface
 import CatClasses
 
 
-url_main = 'https://admin-su-qa.crewplatform.aero/'
+url_main = 'https://admin-su-uat.crewplatform.aero/'
 
 
 routes_table_path = ''
@@ -44,26 +44,29 @@ def create_lineitems():
 
 itf = CatInterface.CatInterface(url_main, lineitems=False)
 
-menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_02_16/CSV_storage',
+menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_09_01/CSV_storage',
                        '2-6hrs Breakfast.csv',
                        itf,
                        name_en='2-6hr. Breakfast',
                        name_ru='2-6 часов Завтрак',
-                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_02_16/2-6hrs Breakfast_imgs/JPEG')
+                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_09_01/2-6hrs Breakfast/imgs')
 
-menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_02_16/CSV_storage',
+
+menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_09_01/CSV_storage',
                        '2-6hrs Lunch.csv',
                        itf,
                        name_en='2-6hr. Lunch',
                        name_ru='2-6 часов Обед',
-                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_02_16/2-6hrs Lunch_imgs/JPEG')
+                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_09_01/2-6hrs Lunch/imgs')
 
-menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_02_16/CSV_storage',
+
+menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_09_01/CSV_storage',
                        '6hrs_plus.csv',
                        itf,
                        name_en='6+ hours',
                        name_ru='6+ часов',
-                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_02_16/6_plus_imgs_jpg')
+                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_09_01/6plus/imgs')
+
 
 menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/внебазовые меню/CSV_storage', 'UUS_1.csv',
                        itf, name_en='UUS (ret)', name_ru='UUS (обр)')

@@ -15,13 +15,12 @@ pd.set_option('mode.chained_assignment', None)
 
 
 url_main = 'https://admin-su.crewplatform.aero/'
-num_of_days = 35
+num_of_days = 15
 start_date = datetime.now(timezone.utc)
 
 
 interface = CrewInterface(url_main)
-df_flights = flightStats.get_flights_table(interface, start_date + timedelta(days=2),
-                                           num_of_days)
+df_flights = flightStats.get_flights_table(interface, start_date + timedelta(days=2), num_of_days)
 df_reports = interface.get_reports_table(start_date, -num_of_days)
 
 stats_flights, df_to_check_flights = flightStats.build_stats(df_flights)
