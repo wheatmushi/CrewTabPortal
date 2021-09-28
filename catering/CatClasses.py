@@ -155,87 +155,83 @@ class Item:
             return False
 
     def modify(self, subcat_id, item_id, confirm=True):  # edit existing item
-        item_data, item_file = self.prepare(subcat_id, item_id)
-        self.interface.modify_item(subcat_id, item_data, item_file, 'modifying', item_id, confirm=confirm)
+        item_data, item_file = self.prepare_item(subcat_id, item_id)
+        p = self.interface.modify_item(subcat_id, item_data, item_file, 'modifying', item_id, confirm=confirm)
         if isinstance(self.data['item allergens'], str):
             server_allergens = set(self.interface.get_allergens(item_id))
             table_allergens = set(self.data['item allergens'].split(', '))
             for allergen in server_allergens.symmetric_difference(table_allergens):
                 self.interface.edit_allergens(allergen, item_id)
+        return p
 
     def create(self, subcat_id, confirm=True):  # create new item
-        item_data, item_file = self.prepare(subcat_id)
-        self.interface.modify_item(subcat_id, item_data, item_file, 'creating', confirm=confirm)
+        item_data, item_file = self.prepare_item(subcat_id)
+        print(item_data)
+        print(item_file)
+        p = self.interface.modify_item(subcat_id, item_data, item_file, 'creating', confirm=confirm)
         if isinstance(self.data['item allergens'], str):
             item_id = self.interface.get_items_in_subcat(subcat_id, search_value=self.data['item name en'])
             item_id = list(item_id.values())[0][0]
             for allergen in self.data['item allergens'].split(', '):
                 self.interface.edit_allergens(allergen, item_id)
+        return p
 
-    def prepare(self, subcat_id, item_id=''):  # prepare data for POSTing (creating/modifying) item
-        data = {'idItem': item_id,
-                'name[0].idTranslation': '',
-                'name[0].idLanguage': '4',
-                'name[0].defaultLanguage': 'true',
-                'name[0].languageName': 'English',
-                'name[0].value': self.data['item name en'],  # ENGLISH NAME
-                'name[1].idTranslation': '',
-                'name[1].idLanguage': '5',
-                'name[1].defaultLanguage': 'false',
-                'name[1].languageName': 'Russian',
-                'name[1].value': self.data['item name ru'],  # RUSSIAN NAME
-                'name[2].idTranslation': '',
-                'name[2].idLanguage': '7',
-                'name[2].defaultLanguage': 'false',
-                'name[2].languageName': 'French',
-                'name[2].value': '',
-                'name[3].idTranslation': '',
-                'name[3].idLanguage': '8',
-                'name[3].defaultLanguage': 'false',
-                'name[3].languageName': 'Italian',
-                'name[3].value': '',
-                'name[4].idTranslation': '',
-                'name[4].idLanguage': '10',
-                'name[4].defaultLanguage': 'false',
-                'name[4].languageName': 'Polish',
-                'name[4].value': '',
-                'description[0].idTranslation': '',
-                'description[0].idLanguage': '4',
-                'description[0].defaultLanguage': 'true',
-                'description[0].languageName': 'English',
-                'description[0].value': self.data['full description en'],  # ENGLISH DESCRIPTION
-                'description[1].idTranslation': '',
-                'description[1].idLanguage': '5',
-                'description[1].defaultLanguage': 'false',
-                'description[1].languageName': 'Russian',
-                'description[1].value': self.data['full description ru'],  # RUSSIAN DESCRIPTION
-                'description[2].idTranslation': '',
-                'description[2].idLanguage': '7',
-                'description[2].defaultLanguage': 'false',
-                'description[2].languageName': 'French',
-                'description[2].value': '',
-                'description[3].idTranslation': '',
-                'description[3].idLanguage': '8',
-                'description[3].defaultLanguage': 'false',
-                'description[3].languageName': 'Italian',
-                'description[3].value': '',
-                'description[4].idTranslation': '',
-                'description[4].idLanguage': '10',
-                'description[4].defaultLanguage': 'false',
-                'description[4].languageName': 'Polish',
-                'description[4].value': '',
-                'idCategory': subcat_id,  # TARGET CATEGORY
-                'shortName': self.data['item short name ru'],  # ITEM SHORT NAME
-                '_limitedQuantity': 'on',
-                '_availableOnAllFlights': 'on',
-                '_gmPreparationRequired': 'on',
-                '_displayOnBeverageSummary': 'on',
-                '_showInHistory': 'on',
-                'color': '#000000',
-                'position': self.data['item position'],
-                'nameLocalizedValueId': '',
-                'descriptionLocalizedValueId': '',
-                'save': ''}
+    def prepare_item(self, subcat_id, item_id=''):  # prepare data for POSTing (creating/modifying) item
+        data = {"idItem": item_id,
+             "name[0].idTranslation": '',
+             "name[0].idLanguage": '4',
+             "name[0].defaultLanguage": 'true',
+             "name[0].languageName": 'English',
+             "name[0].value": self.data['item name en'],  # ENGLISH NAME
+             "name[1].idTranslation":'',
+             "name[1].idLanguage": '5',
+             "name[1].defaultLanguage": 'false',
+             "name[1].languageName": 'Russian',
+             "name[1].value": self.data['item name ru'],  # RUSSIAN NAME
+             "name[2].idTranslation": '',
+             "name[2].idLanguage": '7',
+             "name[2].defaultLanguage": 'false',
+             "name[2].languageName": 'French',
+             "name[2].value": '',
+             "name[3].idTranslation": '',
+             "name[3].idLanguage": '8',
+             "name[3].defaultLanguage": 'false',
+             "name[3].languageName": 'Italian',
+             "name[3].value": '',
+             "description[0].idTranslation": '',
+             "description[0].idLanguage": '4',
+             "description[0].defaultLanguage": 'true',
+             "description[0].languageName": 'English',
+             "description[0].value": self.data['full description en'],  # ENGLISH DESCRIPTION
+             "description[1].idTranslation": '',
+             "description[1].idLanguage": '5',
+             "description[1].defaultLanguage": 'false',
+             "description[1].languageName": 'Russian',
+             "description[1].value": self.data['full description ru'],  # RUSSIAN DESCRIPTION
+             "description[2].idTranslation": '',
+             "description[2].idLanguage": '7',
+             "description[2].defaultLanguage": 'false',
+             "description[2].languageName": 'French',
+             "description[2].value": '',
+             "description[3].idTranslation": '',
+             "description[3].idLanguage": '8',
+             "description[3].defaultLanguage": 'false',
+             "description[3].languageName": 'Italian',
+             "description[3].value": '',
+             "idCategory": subcat_id,  # TARGET CATEGORY
+             "shortName": self.data['item short name ru'],  # ITEM SHORT NAME
+             "_limitedQuantity": 'on',
+             "_availableOnAllFlights": 'on',
+             "_gmPreparationRequired": 'on',
+             "_displayOnBeverageSummary": 'on',
+             "_showInHistory": 'on',
+             "color": '#000000',
+             "position": self.data['item position'],
+             "validityDateStart": '',
+             "validityDateEnd": '',
+             "nameLocalizedValueId": '',
+             "descriptionLocalizedValueId": '',
+             "save": ''}
         if self.data['is limited'] == '1':
             data['limitedQuantity'] = 'true'
         if self.data['is for all flights'] == '1':
@@ -259,18 +255,18 @@ class Item:
 
 
 class LineItemTable:
-    def __init__(self, interface, path=os.path.join('..', '_common')):
+    def __init__(self, interface, path=os.path.join('..', '_DB', 'catering')):
         self.path = path
         self.interface = interface
         self.table = pd.read_csv(os.path.join(path, 'afl_routes.csv'), sep=',', dtype=object, index_col=0)
 
-    def check_updates(self):  # check for new flights on CrewTab portal for last 30 days and update flights table in DB
+    def check_updates(self, start_date, end_date):  # check for new flights on CrewTab portal for last N days and update flights table in DB
         def get_flight_local_time(dep_airport, utc_time, timezones):
             zone = timezones[dep_airport]
             return pytz.utc.localize(utc_time).astimezone(pytz.timezone(zone))
 
         def separate_menus(row):
-            if row['dep_airport'] in crew_utils.name_to_position.keys():
+            if row['dep_airport'] in airport_with_separate_menu:
                 return 'individual'
             elif row['duration'] < 120:
                 return 'less 2 hrs'
@@ -282,15 +278,15 @@ class LineItemTable:
                 return '2-6hr. Lunch'
         print('loading fresh flight data... please be patient this operation will take few minutes')
 
+        airport_with_separate_menu = [i.replace(' (ret)', '') for i in crew_utils.name_to_position.keys()]
+
         with open(os.path.join(self.path, 'iata_to_timezone.csv'), mode='r') as f:
             reader = csv.reader(f, delimiter=',')
             timezones = {rows[0]: rows[1] for rows in reader}
 
-        cur_date = datetime.now()
-        dates = [datetime.strftime(cur_date + timedelta(days=d), '%Y-%m-%d') for d in range(-30, 0)]
         itf = CrewInterface.CrewInterface(self.interface.url_main)
 
-        flights = itf.get_flights_table(dates)
+        flights = itf.get_flights_table(start_date=start_date, end_date=end_date)
         flights = flights.rename(columns=
                                  {'flightNumber': 'fl_num',
                                   'departureAirport': 'dep_airport',
@@ -299,36 +295,61 @@ class LineItemTable:
         flights = flights[flights.duplicated(subset=['fl_num', 'dep_airport', 'arr_airport'], keep=False)]
         flights = flights.drop_duplicates(['fl_num', 'dep_airport', 'arr_airport'])
         flights['utc_dep_time'], flights['utc_arr_time'] =\
-            zip(*flights['DT_RowId'].map(lambda rowid: itf.get_flight_info(rowid.replace(',', ''))))
+            zip(*flights.apply(lambda r: itf.get_flight_info(r.name), axis=1))
         flights['duration'] = flights.apply(lambda row: (row['utc_arr_time'] - row['utc_dep_time']).seconds // 60, axis=1)
         flights['local_dep_time'] = flights.apply(
             lambda row: get_flight_local_time(row['dep_airport'], row['utc_dep_time'], timezones), axis=1)
         flights['is_morn'] = flights['local_dep_time'].map(lambda t: True if 6 <= t.hour < 10 else False)
         flights['menu'] = flights.apply(lambda row: separate_menus(row), axis=1)
         flights['timezone'] = flights['dep_airport'].map(timezones)
-        flights = flights.drop(['departureDate', 'flightStatusLabel', 'details', 'DT_RowId'], axis=1)
+        flights = flights.drop(['departureDateStart', 'flightStatusLabel', 'departureDateEnd', 'regNumber', 'equipment',
+                                'paxInfoAvailable'], axis=1)
         flights['fl_num'] = flights['fl_num'].astype('int')
 
-        old_routes_path = os.path.join('..', '_common', 'afl_routes_old.csv')
-        new_routes_path = os.path.join('..', '_common', 'afl_routes.csv')
+        old_routes_path = os.path.join('..', '_DB', 'catering', 'afl_routes_old.csv')
+        new_routes_path = os.path.join('..', '_DB', 'catering', 'afl_routes.csv')
         old_flights = pd.read_csv(new_routes_path, index_col=0, sep=',')
         flights_difference = pd.concat([flights, old_flights], axis=0, sort=False).\
             drop_duplicates(subset=['fl_num', 'dep_airport', 'arr_airport'], keep=False)
         print('{} flights in DB\n{} flights in fresh data\n{} flights to add'.format(old_flights.shape[0],
                                                                                      flights.shape[0],
                                                                                      flights_difference.shape[0]))
-        if input('continue DB update? y/n?') == 'y':
+
+        choice = 0
+        while choice not in (1, 2, 3):
+            choice = int(input('select 1 to replace old flight table with new one,\n'
+                               'select 2 to make sum of new and old flights,\n'
+                               'select 3 to keep only old flight table'))
+        if choice == 1:
             os.rename(new_routes_path, old_routes_path)
-            flights_sum = pd.concat([flights, old_flights], axis=0, sort=False).\
+            flights.to_csv(new_routes_path, sep=',')
+            print('new flight table exported to afl_routes.csv, old flights in afl_routes_old.csv')
+            return flights
+        elif choice == 2:
+            os.rename(new_routes_path, old_routes_path)
+            flights_sum = pd.concat([flights, old_flights], axis=0, sort=False). \
                 drop_duplicates(subset=['fl_num', 'dep_airport', 'arr_airport'], keep='first')
             flights_sum.to_csv(new_routes_path, sep=',')
-            print('AFL routes DB was backed up and then updated')
+            flights.to_csv('afl_routes_new.csv', sep=',')
+            print('updated table (both old and new) exported to afl_routes.csv,'
+                  ' old flights exported to afl_routes_old.csv,'
+                  ' new table exported to afl_routes_new.csv')
             return flights_sum
+        else:
+            flights.to_csv('afl_routes_new.csv', sep=',')
+            print('old flight table still in afl_routes.csv, new flights table in afl_routes.csv')
+            return old_flights
 
-    def deploy(self):  # deploy whole line items table (for many flights maybe)
+    def deploy(self, below=False):  # deploy whole line items table (for many flights maybe)
         if input('update flights table in DB?\ny or n?') == 'y':
             self.table = self.check_updates()
-        for index, row in self.table.iterrows():
+        if below:
+            n = self.table[self.table['fl_num'] == below].index[0]
+            table = self.table.loc[n:]
+        else:
+            table = self.table
+
+        for index, row in table.iterrows():
             if row['menu'] != 'less 2 hrs':
                 item_set = LineItemSet(row, self.interface)
                 item_set.create()
@@ -360,6 +381,8 @@ class LineItemSet:
                 airport = 'AGP  VLC  ALC (ret)'
             elif airport in ('DXB', 'DWC'):
                 airport = 'DXB  DWC (ret)'
+            elif airport in ('HAV', 'VRA'):
+                airport = 'HAV  VRA (ret)'
             else:
                 airport += ' (ret)'
             menu_id = self.interface.get_cat_ids(search_value=airport, top=True, exactly=True)[airport][0]

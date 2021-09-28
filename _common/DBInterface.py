@@ -12,21 +12,11 @@ class DBInterface:
         res = self.cursor.fetchall()
         return [i for t in res for i in t]
 
-    def write_table(self, table_name, dataframe):
-        dataframe.to_sql(name=table_name, con=self.connection, if_exists='replace')
+    def write_table(self, table_name, dataframe, if_exists='replace', index=True):
+        dataframe.to_sql(name=table_name, con=self.connection, if_exists=if_exists, index=index)
         self.connection.commit()
 
-    def read_table(self, table_name, order_by, depth):
-        sql_req = 'SELECT * FROM {} ORDER BY {} DESC limit {}'.format(table_name, order_by, depth)
-        dataframe = pd.read_sql(sql_req, self.connection)
+    def read_table(self, table_name, order_by, index_col='DT_RowId'):
+        sql_req = 'SELECT * FROM {} ORDER BY {} DESC'.format(table_name, order_by)
+        dataframe = pd.read_sql(sql_req, self.connection, index_col=index_col)
         return dataframe
-
-
-conn = sqlite3.connect('example.sqlite')
-c = conn.cursor()
-
-stats_flights.to_sql('stats_flights', con=conn, if_exists='replace')
-conn.commit()
-
-q = pd.read_sql('SELECT * FROM stats_flights ORDER BY departureDate DESC limit 10',
-                con=conn, index_col='departureDate')
