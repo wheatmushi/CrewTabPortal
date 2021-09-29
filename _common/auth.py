@@ -12,7 +12,7 @@ from requests.packages.urllib3.util.retry import Retry
 class SessionCrewTabPortal(requests.Session):  # set timeout=10s and 5 retries by default for every request
     def __init__(self, url_main):
         super(SessionCrewTabPortal, self).__init__()
-        retries = Retry(total=5, backoff_factor=1, method_whitelist=False)
+        retries = Retry(total=5, backoff_factor=1)
         self.mount('https://', HTTPAdapter(max_retries=retries))
         self.mount('http://', HTTPAdapter(max_retries=retries))
         self.url_main = url_main
@@ -46,7 +46,8 @@ class SessionCrewTabPortal(requests.Session):  # set timeout=10s and 5 retries b
         credentials = {'username': login, 'password': password, '_csrf': csrf}
         p = self.post('login', credentials)
 
-        if p.url != self.url_main + 'core/index':
+        #if p.url != self.url_main + 'core/index':
+        if not p.url.startswith(self.url_main + 'core/index'):
             print('incorrect login or password, try again!\n')
             return self.authentication()
         else:

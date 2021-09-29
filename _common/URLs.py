@@ -23,6 +23,7 @@ URL_users_reset_password_csrf = 'admin/users/{user_id}/reset_password'
 # reset user password (POST)
 URL_users_reset_password = 'admin/users/%7Bid%7D/reset_password'
 
+
 #  CATERING DATA
 # get list of categories BY length & search_value
 URL_catering_categories = 'core/catering/ajax/categories?draw=1&columns[0][data]=name&columns[0][name]=name&columns[0][searchable]=true&columns[0][orderable]=true&columns[0][search][value]=&columns[0][search][regex]=false&columns[1][data]=image&columns[1][name]=image&columns[1][searchable]=false&columns[1][orderable]=false&columns[1][search][value]=&columns[1][search][regex]=false&columns[2][data]=parentCategory&columns[2][name]=parentCategory&columns[2][searchable]=false&columns[2][orderable]=true&columns[2][search][value]=&columns[2][search][regex]=false&columns[3][data]=subcategories&columns[3][name]=subcategories&columns[3][searchable]=false&columns[3][orderable]=false&columns[3][search][value]=&columns[3][search][regex]=false&columns[4][data]=backgroundColor&columns[4][name]=backgroundColor&columns[4][searchable]=false&columns[4][orderable]=true&columns[4][search][value]=&columns[4][search][regex]=false&columns[5][data]=foregroundColor&columns[5][name]=foregroundColor&columns[5][searchable]=false&columns[5][orderable]=true&columns[5][search][value]=&columns[5][search][regex]=false&columns[6][data]=multipleChoice&columns[6][name]=multipleChoice&columns[6][searchable]=false&columns[6][orderable]=true&columns[6][search][value]=&columns[6][search][regex]=false&columns[7][data]=position&columns[7][name]=position&columns[7][searchable]=false&columns[7][orderable]=true&columns[7][search][value]=&columns[7][search][regex]=false&columns[8][data]=lastUpdate&columns[8][name]=lastUpdate&columns[8][searchable]=false&columns[8][orderable]=true&columns[8][search][value]=&columns[8][search][regex]=false&columns[9][data]=details&columns[9][name]=details&columns[9][searchable]=false&columns[9][orderable]=false&columns[9][search][value]=&columns[9][search][regex]=false&order[0][column]=0&order[0][dir]=asc&start=0&length={length}&search[value]={search_value}&search[regex]=false&_=1553694425077'
@@ -69,6 +70,7 @@ URL_catering_delete_lineitem_confirm = 'core/catering/line_items/delete_confirm/
 URL_catering_delete_category_confirm = 'core/catering/categories/delete_confirmed/{category_id}'
 # confirm delete option BY option_id
 URL_catering_delete_option = 'core/catering/items/option/delete_confirmed/{option_id}'
+
 
 # CATERING STATS
 # get list of catering closed sessions BY flight_number & departure_airport & start_date & end_date & length
