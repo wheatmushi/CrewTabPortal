@@ -260,10 +260,18 @@ class LineItemTable:
         self.interface = interface
         self.table = pd.read_csv(os.path.join(path, 'afl_routes.csv'), sep=',', dtype=object, index_col=0)
 
-    def check_updates(self, start_date, end_date):  # check for new flights on CrewTab portal for last N days and update flights table in DB
+    def check_updates(self, start_date=None, end_date=None):
+        # check for new flights on CrewTab portal for last N days and update flights table in DB
         def get_flight_local_time(dep_airport, utc_time, timezones):
-            zone = timezones[dep_airport]
-            return pytz.utc.localize(utc_time).astimezone(pytz.timezone(zone))
+            while True:
+                try:
+                    zone = timezones[dep_airport]
+                    local_time = pytz.utc.localize(utc_time).astimezone(pytz.timezone(zone))
+                    break
+                except:
+                    print('timezone for airport {} not found/incorrect, please enter it manually'.format(dep_airport))
+                    timezones[dep_airport] = input()
+            return local_time
 
         def separate_menus(row):
             if row['dep_airport'] in airport_with_separate_menu:
@@ -276,13 +284,13 @@ class LineItemTable:
                 return '2-6hr. Breakfast'
             else:
                 return '2-6hr. Lunch'
+        if not start_date:
+            start_date = input('enter start date YYYY-MM-DD')
+        if not end_date:
+            end_date = input('enter end date YYYY-MM-DD')
         print('loading fresh flight data... please be patient this operation will take few minutes')
 
         airport_with_separate_menu = [i.replace(' (ret)', '') for i in crew_utils.name_to_position.keys()]
-
-        with open(os.path.join(self.path, 'iata_to_timezone.csv'), mode='r') as f:
-            reader = csv.reader(f, delimiter=',')
-            timezones = {rows[0]: rows[1] for rows in reader}
 
         itf = CrewInterface.CrewInterface(self.interface.url_main)
 
@@ -294,11 +302,26 @@ class LineItemTable:
         flights = flights[flights['fl_num'] < '3000']
         flights = flights[flights.duplicated(subset=['fl_num', 'dep_airport', 'arr_airport'], keep=False)]
         flights = flights.drop_duplicates(['fl_num', 'dep_airport', 'arr_airport'])
-        flights['utc_dep_time'], flights['utc_arr_time'] =\
-            zip(*flights.apply(lambda r: itf.get_flight_info(r.name), axis=1))
+
+        print('flights table loaded \nloading detalied flights info...')
+        tmp = pd.DataFrame(flights.apply(lambda r: itf.get_flight_info(r.name), axis=1).to_list(),
+                           index=flights.index,
+                           columns=['utc_dep_time', 'utc_arr_time'])
+        flights = pd.concat([flights, tmp], axis=1)
         flights['duration'] = flights.apply(lambda row: (row['utc_arr_time'] - row['utc_dep_time']).seconds // 60, axis=1)
+
+        with open(os.path.join(self.path, 'iata_to_timezone.csv'), mode='r') as f:  # read timezones
+            reader = csv.reader(f, delimiter=',')
+            timezones = {rows[0]: rows[1] for rows in reader}
+
+        # count local departure time and fill timezones dict with missing airport<>timezone pairs
         flights['local_dep_time'] = flights.apply(
             lambda row: get_flight_local_time(row['dep_airport'], row['utc_dep_time'], timezones), axis=1)
+
+        with open(os.path.join(self.path, 'iata_to_timezone.csv'), mode='w') as f:
+            w = csv.writer(f)
+            w.writerows(timezones.items())
+
         flights['is_morn'] = flights['local_dep_time'].map(lambda t: True if 6 <= t.hour < 10 else False)
         flights['menu'] = flights.apply(lambda row: separate_menus(row), axis=1)
         flights['timezone'] = flights['dep_airport'].map(timezones)
@@ -340,11 +363,11 @@ class LineItemTable:
             print('old flight table still in afl_routes.csv, new flights table in afl_routes.csv')
             return old_flights
 
-    def deploy(self, below=False):  # deploy whole line items table (for many flights maybe)
+    def deploy(self, below_index=False):  # deploy whole line items table (for many flights maybe)
         if input('update flights table in DB?\ny or n?') == 'y':
             self.table = self.check_updates()
-        if below:
-            n = self.table[self.table['fl_num'] == below].index[0]
+        if below_index:
+            n = self.table[self.table['fl_num'] == below_index].index[0]
             table = self.table.loc[n:]
         else:
             table = self.table

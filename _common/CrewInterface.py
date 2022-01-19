@@ -37,13 +37,13 @@ class CrewInterface:
         base_content = [cell.text.replace('\n', '').strip() for cell in tables[0].find_all('td')]
         base_info = {base_head[i]: base_content[i] for i in range(len(base_head))}
         base_info['Flight Number'] = base_info['Flight Number'].replace('SU', '')
-        for i in ['Scheduled Departure', 'Estimated Departure', 'Scheduled Arrival']:
+        for i in ['Scheduled Departure (UTC)', 'Estimated Departure (UTC)', 'Scheduled Arrival (UTC)']:
             try:
-                base_info[i] = datetime.strptime(base_info[i], '%d/%b/%Y %H:%M:%S %Z')
+                base_info[i] = datetime.strptime(base_info[i], '%d%b%Y %H:%M %Z')
             except:
                 base_info[i] = None
         base_info['Duration'] = int(
-            (base_info['Scheduled Arrival'] - base_info['Scheduled Departure']).total_seconds() // 60)
+            (base_info['Scheduled Arrival (UTC)'] - base_info['Scheduled Departure (UTC)']).total_seconds() // 60)
         pass_head = [cell.text for cell in tables[1].find_all('th')][1:]
         pass_content = [cell.text.replace('\n', '').strip() for cell in tables[1].find_all('td')]
         pass_info = {pass_head[i]: {pass_content[j * 4]: pass_content[j * 4 + i + 1] for j in range(3)} for i in
@@ -51,7 +51,7 @@ class CrewInterface:
         if all_info:
             return base_info, pass_info
         else:
-            return base_info['Scheduled Departure'], base_info['Scheduled Arrival']
+            return base_info['Scheduled Departure (UTC)'], base_info['Scheduled Arrival (UTC)']
 
     @timer
     def get_flights_table(self, start_date, end_date=None, num_of_days=None, flight_numbers='', departure_airport='',

@@ -46,7 +46,6 @@ class SessionCrewTabPortal(requests.Session):  # set timeout=10s and 5 retries b
         credentials = {'username': login, 'password': password, '_csrf': csrf}
         p = self.post('login', credentials)
 
-        #if p.url != self.url_main + 'core/index':
         if not p.url.startswith(self.url_main + 'core/index'):
             print('incorrect login or password, try again!\n')
             return self.authentication()

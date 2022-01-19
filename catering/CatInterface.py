@@ -16,6 +16,7 @@ class CatInterface:
         self.session = auth.SessionCrewTabPortal(url_main)
         self.session.authentication(login, password)
         if lineitems:
+            print('loading top-lvl categories...')
             self.default_cats = self.get_default_cats()
 
     def get_cat_ids(self, search_value, exactly=False, top=False, key='name_en', just_id=False):  # get top-lvl category ID

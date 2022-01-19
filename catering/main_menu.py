@@ -39,33 +39,35 @@ def create_base_menu(base_menus_path, filename, position):
 def create_lineitems():
     interface = CatInterface.CatInterface(url_main, lineitems=True)
     table = CatClasses.LineItemTable(interface)
+    table.check_updates()
+    table = CatClasses.LineItemTable(interface)
     table.deploy()
 
 
 itf = CatInterface.CatInterface(url_main, lineitems=False)
 
-menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_09_01/CSV_storage',
+menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_12_16/CSV_storage',
                        '2-6hrs Breakfast.csv',
                        itf,
                        name_en='2-6hr. Breakfast',
                        name_ru='2-6 часов Завтрак',
-                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_09_01/2-6hrs Breakfast/imgs')
+                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_12_16/imgs/2-6 breakfast')
 
 
-menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_09_01/CSV_storage',
+menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_12_16/CSV_storage',
                        '2-6hrs Lunch.csv',
                        itf,
                        name_en='2-6hr. Lunch',
                        name_ru='2-6 часов Обед',
-                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_09_01/2-6hrs Lunch/imgs')
+                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_12_16/imgs/2-6 lunch')
 
 
-menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_09_01/CSV_storage',
+menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/base catering/2021_12_16/CSV_storage',
                        '6hrs_plus.csv',
                        itf,
                        name_en='6+ hours',
                        name_ru='6+ часов',
-                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_09_01/6plus/imgs')
+                       img_path='/Volumes/data/wrk/catering menu/base catering/2021_12_16/imgs/6plus')
 
 
 menu = CatClasses.Menu('/Volumes/data/wrk/catering menu/внебазовые меню/CSV_storage', 'UUS_1.csv',
